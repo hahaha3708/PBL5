@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heritage Map - Viet Heritage Hub</title>
+    <link rel="stylesheet" href="/css/map.css">
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY"></script>
+</head>
+<body>
+    <header>
+        <h1>Heritage Map</h1>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/timeline">Timeline</a>
+            <a href="/map">Map</a>
+            <a href="/community">Community</a>
+            <a href="/shop">Shop</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="map-container">
+            <div class="map-controls">
+                <select id="regionSelect">
+                    <option value="">All Regions</option>
+                    <option value="North">Northern Vietnam</option>
+                    <option value="Central">Central Vietnam</option>
+                    <option value="South">Southern Vietnam</option>
+                </select>
+                <select id="typeSelect">
+                    <option value="">All Types</option>
+                    <option value="Temple">Temples</option>
+                    <option value="Palace">Palaces</option>
+                    <option value="Museum">Museums</option>
+                    <option value="Historical Site">Historical Sites</option>
+                </select>
+                <select id="languageSelect">
+                    <option value="vi">Vietnamese</option>
+                    <option value="en">English</option>
+                    <option value="fr">French</option>
+                </select>
+            </div>
+
+            <div id="map" class="map"></div>
+
+            <div class="site-info-panel" id="siteInfo">
+                <h3 id="siteTitle"></h3>
+                <img id="siteImage" src="" alt="Site Image">
+                <p id="siteDescription"></p>
+                <audio id="siteAudio" controls>
+                    <source src="" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>
+                <button id="playAudioBtn">Play Audio Guide</button>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Viet Heritage Hub. Preserving Vietnam's Cultural Heritage.</p>
+    </footer>
+
+    <script src="/js/map.js"></script>
+</body>
+</html>
