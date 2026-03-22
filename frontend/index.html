@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Viet Heritage Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'lacquer-red': '#722F37',
+            'bronze-gold': '#C5A059',
+            'ink-black': '#0F172A',
+            'rice-paper': '#F9F7F2',
+            'jade-green': '#00A86B',
+            'deep-indigo': '#1e1b4b'
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Playfair Display', 'serif'],
+            display: ['Cinzel', 'serif']
+          },
+          backgroundImage: {
+            'texture-paper': "url('https://www.transparenttextures.com/patterns/cream-paper.png')",
+            'gradient-cinematic': 'linear-gradient(to bottom, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 1))'
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head>
+<body class="min-h-screen flex flex-col font-sans text-rice-paper bg-ink-black bg-texture-paper">
+  <header id="site-header" class="fixed top-0 w-full z-50 transition-all duration-300 border-b bg-transparent border-transparent py-6">
+    <div class="container mx-auto px-6 flex justify-between items-center">
+      <a href="#/" class="flex items-center gap-3 group" data-nav-route="/">
+        <div class="w-10 h-10 rounded-full border-2 border-bronze-gold flex items-center justify-center bg-black/50 group-hover:bg-bronze-gold transition-colors">
+          <div class="w-6 h-6 bg-bronze-gold group-hover:bg-black" style="clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)"></div>
+        </div>
+        <div class="flex flex-col">
+          <span class="font-display font-bold text-xl tracking-widest text-bronze-gold">VIET HERITAGE</span>
+          <span class="text-[10px] tracking-[0.3em] uppercase opacity-70">Legacy Digitalis</span>
+        </div>
+      </a>
+      <nav class="hidden md:flex items-center gap-8">
+        <a href="#/" data-nav-route="/" class="nav-link text-sm uppercase tracking-widest transition-colors relative group text-gray-300 hover:text-bronze-gold">Home<span class="underline-anim absolute -bottom-1 left-0 h-[1px] bg-bronze-gold transition-all duration-300 w-0 group-hover:w-full"></span></a>
+        <a href="#/history" data-nav-route="/history" class="nav-link text-sm uppercase tracking-widest transition-colors relative group text-gray-300 hover:text-bronze-gold">History<span class="underline-anim absolute -bottom-1 left-0 h-[1px] bg-bronze-gold transition-all duration-300 w-0 group-hover:w-full"></span></a>
+        <a href="#/map" data-nav-route="/map" class="nav-link text-sm uppercase tracking-widest transition-colors relative group text-gray-300 hover:text-bronze-gold">Map<span class="underline-anim absolute -bottom-1 left-0 h-[1px] bg-bronze-gold transition-all duration-300 w-0 group-hover:w-full"></span></a>
+        <a href="#/ai" data-nav-route="/ai" class="nav-link text-sm uppercase tracking-widest transition-colors relative group text-gray-300 hover:text-bronze-gold">AI Studio<span class="underline-anim absolute -bottom-1 left-0 h-[1px] bg-bronze-gold transition-all duration-300 w-0 group-hover:w-full"></span></a>
+        <a href="#/community" data-nav-route="/community" class="nav-link text-sm uppercase tracking-widest transition-colors relative group text-gray-300 hover:text-bronze-gold">Community<span class="underline-anim absolute -bottom-1 left-0 h-[1px] bg-bronze-gold transition-all duration-300 w-0 group-hover:w-full"></span></a>
+        <a href="#/marketplace" data-nav-route="/marketplace" class="nav-link text-sm uppercase tracking-widest transition-colors relative group text-gray-300 hover:text-bronze-gold">Marketplace<span class="underline-anim absolute -bottom-1 left-0 h-[1px] bg-bronze-gold transition-all duration-300 w-0 group-hover:w-full"></span></a>
+      </nav>
+      <div class="hidden md:flex items-center gap-4">
+        <button type="button" class="hover:text-bronze-gold transition" aria-label="Language">🌐</button>
+        <button type="button" class="hover:text-bronze-gold transition" aria-label="Cart">🛒</button>
+        <button type="button" class="border border-white/20 px-4 py-1.5 rounded-full text-xs uppercase tracking-wider hover:bg-bronze-gold hover:text-black transition-all">👤 Connect</button>
+      </div>
+      <button type="button" id="mobile-menu-btn" class="md:hidden text-2xl" aria-label="Menu">☰</button>
+    </div>
+    <div id="mobile-menu" class="hidden md:hidden absolute top-full left-0 w-full bg-ink-black/95 backdrop-blur-xl border-b border-white/10 p-6 flex flex-col gap-4">
+      <a href="#/" class="text-lg font-display uppercase tracking-widest text-center py-2 border-b border-white/5">Home</a>
+      <a href="#/history" class="text-lg font-display uppercase tracking-widest text-center py-2 border-b border-white/5">History</a>
+      <a href="#/map" class="text-lg font-display uppercase tracking-widest text-center py-2 border-b border-white/5">Map</a>
+      <a href="#/ai" class="text-lg font-display uppercase tracking-widest text-center py-2 border-b border-white/5">AI Studio</a>
+      <a href="#/community" class="text-lg font-display uppercase tracking-widest text-center py-2 border-b border-white/5">Community</a>
+      <a href="#/marketplace" class="text-lg font-display uppercase tracking-widest text-center py-2 border-b border-white/5">Marketplace</a>
+    </div>
+  </header>
+
+  <main class="flex-grow pt-20">
+    <!-- HOME -->
+    <section class="page-section overflow-hidden" data-route="/" id="page-home">
+      <section class="relative h-screen flex items-center justify-center overflow-hidden">
+        <div id="hero-bg" class="absolute inset-0 z-0">
+          <div class="absolute inset-0 bg-gradient-cinematic z-10"></div>
+          <div class="w-full h-full bg-[url('https://picsum.photos/1920/1080?random=20&blur=2')] bg-cover bg-center opacity-60"></div>
+        </div>
+        <div class="relative z-20 text-center max-w-5xl px-6 animate-fade-in-up">
+          <div class="w-24 h-1 bg-bronze-gold mx-auto mb-8"></div>
+          <h1 class="font-display text-5xl md:text-8xl leading-tight mb-6 text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400 drop-shadow-2xl">
+            VIETNAM <br />
+            <span class="text-bronze-gold italic font-serif text-4xl md:text-6xl">Timeless &amp; Infinite</span>
+          </h1>
+          <p class="text-lg md:text-xl text-gray-300 mb-10 font-light tracking-wide max-w-2xl mx-auto">
+            A digital sanctuary preserving 4,000 years of history. Experience the intersection of ancient heritage and artificial intelligence.
+          </p>
+          <div class="flex flex-col md:flex-row gap-6 justify-center items-center">
+            <a href="#/history" class="px-8 py-3 bg-bronze-gold text-ink-black font-bold uppercase tracking-widest hover:bg-white transition-all shadow-[0_0_20px_rgba(197,160,89,0.3)]">Begin Journey</a>
+            <a href="#/ai" class="px-8 py-3 border border-white/30 hover:border-bronze-gold hover:text-bronze-gold transition-all uppercase tracking-widest backdrop-blur-sm">Enter AI Studio</a>
+          </div>
+        </div>
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce text-gray-500">
+          <span class="text-[10px] uppercase tracking-widest mb-2 block">Scroll</span>
+          <div class="w-px h-12 bg-gray-500 mx-auto"></div>
+        </div>
+      </section>
+      <section class="py-24 bg-ink-black relative z-10">
+        <div class="container mx-auto px-6">
+          <div class="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-4 h-auto md:h-[600px]">
+            <a href="#/history" class="md:col-span-2 md:row-span-2 group relative rounded-xl overflow-hidden border border-white/5 hover:border-bronze-gold/30 transition-all">
+              <div class="absolute inset-0 bg-[url('https://picsum.photos/800/800?random=1')] bg-cover bg-center transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0"></div>
+              <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
+              <div class="absolute bottom-0 left-0 p-8">
+                <span class="text-bronze-gold mb-4 text-3xl block">⏱</span>
+                <h3 class="font-display text-3xl mb-2 group-hover:text-bronze-gold transition-colors">Time Portal</h3>
+                <p class="text-gray-400 text-sm max-w-sm opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-4 group-hover:translate-y-0">Traverse the Dynasties. From the Bronze Drums of Dong Son to the Imperial City of Hue.</p>
+              </div>
+            </a>
+            <a href="#/map" class="md:col-span-2 group relative rounded-xl overflow-hidden border border-white/5 hover:border-bronze-gold/30 transition-all">
+              <div class="absolute inset-0 bg-[url('https://picsum.photos/800/400?random=2')] bg-cover bg-center transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0"></div>
+              <div class="absolute inset-0 bg-black/60 group-hover:bg-black/40 transition-colors"></div>
+              <div class="absolute bottom-0 left-0 p-6">
+                <div class="flex items-center gap-3">
+                  <span class="text-jade-green text-2xl">🗺</span>
+                  <h3 class="font-display text-2xl group-hover:text-jade-green transition-colors">Cultural Atlas</h3>
+                </div>
+              </div>
+            </a>
+            <a href="#/ai" class="group relative rounded-xl overflow-hidden border border-white/5 hover:border-bronze-gold/30 transition-all bg-deep-indigo">
+              <div class="absolute inset-0 flex items-center justify-center opacity-10 group-hover:opacity-20 transition-opacity text-8xl">💻</div>
+              <div class="absolute bottom-0 left-0 p-6">
+                <span class="text-purple-400 mb-2 text-2xl block">✦</span>
+                <h3 class="font-display text-xl mb-1">AI Studio</h3>
+                <span class="text-xs uppercase tracking-widest text-gray-500 group-hover:text-white transition-colors">Create &amp; Restore</span>
+              </div>
+            </a>
+            <a href="#/community" class="group relative rounded-xl overflow-hidden border border-white/5 hover:border-bronze-gold/30 transition-all bg-lacquer-red/20">
+              <div class="absolute inset-0 flex items-center justify-center opacity-10 group-hover:opacity-20 transition-opacity text-8xl">👥</div>
+              <div class="absolute bottom-0 left-0 p-6">
+                <span class="text-lacquer-red mb-2 text-2xl block">◎</span>
+                <h3 class="font-display text-xl mb-1">Community</h3>
+                <span class="text-xs uppercase tracking-widest text-gray-500 group-hover:text-white transition-colors">Events &amp; Tribes</span>
+              </div>
+            </a>
+          </div>
+        </div>
+      </section>
+      <section class="py-14 border-y border-white/5 bg-black/40">
+        <div class="container mx-auto px-6">
+          <div id="home-stats" class="grid grid-cols-1 md:grid-cols-3 gap-10 text-center">
+            <div id="home-stat-works" class="glass-panel rounded-xl p-8">
+              <span class="block font-display text-4xl md:text-5xl text-bronze-gold mb-2">—</span>
+              <span class="text-xs uppercase tracking-[0.25em] text-gray-400">Tác phẩm số hóa</span>
+            </div>
+            <div id="home-stat-artisans" class="glass-panel rounded-xl p-8">
+              <span class="block font-display text-4xl md:text-5xl text-jade-green mb-2">—</span>
+              <span class="text-xs uppercase tracking-[0.25em] text-gray-400">Nghệ nhân</span>
+            </div>
+            <div id="home-stat-sites" class="glass-panel rounded-xl p-8">
+              <span class="block font-display text-4xl md:text-5xl text-bronze-gold mb-2">—</span>
+              <span class="text-xs uppercase tracking-[0.25em] text-gray-400">Điểm di sản</span>
+            </div>
+          </div>
+          <p id="home-stats-err" class="hidden text-center text-sm text-red-400/80 mt-4">Không tải được thống kê (kiểm tra API).</p>
+        </div>
+      </section>
+      <section class="py-20 bg-texture-paper bg-rice-paper text-ink-black text-center">
+        <div class="container mx-auto px-6">
+          <h2 class="font-display text-3xl md:text-5xl mb-6">"Preserving the past is building the future."</h2>
+          <a href="#/marketplace" class="inline-flex items-center gap-2 text-sm uppercase tracking-widest border-b border-ink-black pb-1 hover:text-lacquer-red hover:border-lacquer-red transition-all">Support Local Artisans →</a>
+        </div>
+      </section>
+    </section>
+
+    <!-- HISTORY -->
+    <section class="page-section min-h-screen pb-20" data-route="/history" id="page-history">
+      <div class="relative h-[60vh] flex items-center justify-center overflow-hidden">
+        <div class="absolute inset-0 bg-[url('https://picsum.photos/1920/1080?grayscale&blur=2')] bg-cover bg-center opacity-30"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-ink-black via-transparent to-transparent"></div>
+        <div class="relative z-10 text-center max-w-4xl px-4">
+          <h1 class="font-display text-5xl md:text-7xl text-bronze-gold mb-4 tracking-tight drop-shadow-lg">The River of Time</h1>
+          <p class="text-xl md:text-2xl font-serif italic text-gray-300">"Thousands of years of civilization, etched in stone and spirit."</p>
+        </div>
+      </div>
+      <div class="container mx-auto px-6 -mt-20 relative z-20">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div class="lg:col-span-3 glass-panel p-6 rounded-lg sticky top-24 h-fit">
+            <h3 class="text-bronze-gold font-bold uppercase tracking-widest mb-6 flex items-center gap-2">📜 Eras</h3>
+            <ul class="space-y-4">
+              <li><button type="button" data-dynasty-index="0" class="w-full text-left p-4 border-l-2 border-yellow-500 bg-white/5">Ly Dynasty<div class="text-xs text-gray-400 font-mono mt-1">1009–1225</div></button></li>
+              <li><button type="button" data-dynasty-index="1" class="w-full text-left p-4 border-l-2 border-white/10 text-gray-500 hover:bg-white/5">Tran Dynasty<div class="text-xs text-gray-400 font-mono mt-1">1225–1400</div></button></li>
+              <li><button type="button" data-dynasty-index="2" class="w-full text-left p-4 border-l-2 border-white/10 text-gray-500 hover:bg-white/5">Le Dynasty<div class="text-xs text-gray-400 font-mono mt-1">1428–1789</div></button></li>
+              <li><button type="button" data-dynasty-index="3" class="w-full text-left p-4 border-l-2 border-white/10 text-gray-500 hover:bg-white/5">Nguyen Dynasty<div class="text-xs text-gray-400 font-mono mt-1">1802–1945</div></button></li>
+            </ul>
+          </div>
+          <div class="lg:col-span-9 space-y-8">
+            <div class="glass-panel p-6 rounded-lg border border-bronze-gold/20">
+              <div class="flex justify-between items-end mb-4 flex-wrap gap-2">
+                <h2 id="dynasty-title" class="font-display text-3xl">Ly Dynasty</h2>
+                <span id="dynasty-period" class="text-bronze-gold font-mono text-xl">1009–1225</span>
+              </div>
+              <p id="dynasty-desc" class="text-gray-300 text-lg mb-8 font-serif leading-relaxed border-b border-white/10 pb-6">The Golden Era of Buddhism and Art.</p>
+              <div class="h-64 w-full">
+                <h4 class="text-xs uppercase text-gray-500 mb-2">Dynastic Influence Visualization</h4>
+                <canvas id="dynastyChart" height="200"></canvas>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="glass-panel p-6 rounded-lg group cursor-pointer overflow-hidden relative">
+                <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10"></div>
+                <img src="https://picsum.photos/400/300?random=1" class="w-full h-48 object-cover rounded opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 mb-4" alt="Artifact" />
+                <div class="relative z-20">
+                  <h4 class="font-display text-xl mb-1">Imperial Ceramics</h4>
+                  <p class="text-sm text-gray-400">Blue and white porcelain patterns distinctive to this era.</p>
+                </div>
+              </div>
+              <div class="glass-panel p-6 rounded-lg group cursor-pointer overflow-hidden relative">
+                <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10"></div>
+                <img src="https://picsum.photos/400/300?random=2" class="w-full h-48 object-cover rounded opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 mb-4" alt="Architecture" />
+                <div class="relative z-20">
+                  <h4 class="font-display text-xl mb-1">Pagoda Architecture</h4>
+                  <p class="text-sm text-gray-400">Curved roofs and intricate wood carving techniques.</p>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="w-full py-6 border border-white/20 hover:border-bronze-gold hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-gray-300 hover:text-white uppercase tracking-widest">Explore Full Archives →</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MAP -->
+    <section class="page-section min-h-screen pb-16" data-route="/map" id="page-map">
+      <div class="relative h-[42vh] min-h-[240px] flex items-center justify-center overflow-hidden border-b border-white/10">
+        <div class="absolute inset-0 bg-[url('https://picsum.photos/1920/1080?random=88')] bg-cover bg-center opacity-25"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-ink-black via-ink-black/70 to-transparent"></div>
+        <div class="relative z-10 text-center px-4 max-w-3xl">
+          <p class="text-bronze-gold uppercase tracking-[0.35em] text-xs mb-3">Cultural Atlas</p>
+          <h1 class="font-display text-4xl md:text-6xl text-white mb-3">Bản đồ di sản tương tác</h1>
+          <p class="text-gray-300 font-serif italic">Khám phá các điểm di sản mẫu — dữ liệu từ <code class="text-bronze-gold text-sm not-italic">GET /api/sites</code></p>
+        </div>
+      </div>
+      <div class="container mx-auto px-4 pt-8 -mt-6 relative z-20">
+        <div class="flex flex-col lg:flex-row gap-6 justify-between items-stretch">
+          <div class="lg:w-[340px] flex flex-col gap-4 order-2 lg:order-1">
+            <div class="glass-panel rounded-xl p-4 border border-white/10">
+              <label class="text-xs uppercase tracking-widest text-gray-500 block mb-2">Tìm kiếm</label>
+              <input type="search" id="map-search" placeholder="Tên di sản…" class="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-bronze-gold focus:outline-none" />
+            </div>
+            <div class="flex flex-wrap gap-2" id="map-region-filters">
+              <button type="button" data-region="all" class="map-filter px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border border-bronze-gold bg-bronze-gold/10 text-white">Tất cả</button>
+              <button type="button" data-region="North" class="map-filter px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border border-white/20 text-gray-400 hover:border-bronze-gold/50">Miền Bắc</button>
+              <button type="button" data-region="Central" class="map-filter px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border border-white/20 text-gray-400 hover:border-bronze-gold/50">Trung</button>
+              <button type="button" data-region="South" class="map-filter px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border border-white/20 text-gray-400 hover:border-bronze-gold/50">Miền Nam</button>
+            </div>
+            <div class="glass-panel rounded-xl border border-white/10 flex-1 min-h-[200px] max-h-[480px] overflow-y-auto">
+              <ul id="map-site-list" class="divide-y divide-white/5">
+                <li class="text-sm text-gray-500 p-4">Đang tải danh sách…</li>
+              </ul>
+            </div>
+          </div>
+          <div class="lg:flex-1 h-[52vh] max-h-[560px] min-h-[320px] order-1 lg:order-2 rounded-xl overflow-hidden border border-white/10 shadow-2xl relative z-0">
+            <div id="heritage-map" class="w-full h-full"></div>
+          </div>
+        </div>
+        <p id="map-error" class="hidden mt-4 text-center text-sm text-red-400/90">Không tải được bản đồ. Hãy chạy backend và thử lại.</p>
+      </div>
+    </section>
+
+    <!-- AI STUDIO -->
+    <section class="page-section min-h-screen pt-12 pb-20 bg-[url('https://www.transparenttextures.com/patterns/black-linen.png')]" data-route="/ai" id="page-ai">
+      <div class="container mx-auto px-6 max-w-6xl">
+        <header class="mb-12 text-center">
+          <span class="text-bronze-gold uppercase tracking-[0.4em] text-xs font-bold mb-2 block">Powered by Gemini AI</span>
+          <h1 class="font-display text-4xl md:text-6xl mb-4">The Digital Scribe</h1>
+          <p class="text-gray-400 max-w-2xl mx-auto font-serif italic">"Enter a word, and let the AI spirit reveal its soul through the lens of Vietnamese philosophy."</p>
+        </header>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          <form id="ai-form" class="glass-panel p-8 rounded-xl border border-white/10 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-lacquer-red to-bronze-gold"></div>
+            <div class="space-y-6">
+              <div>
+                <label class="block text-xs uppercase tracking-widest text-gray-500 mb-2">Your Intention (Word/Phrase)</label>
+                <input id="ai-word" name="word" type="text" placeholder="e.g., Peace, Family, Resilience" class="w-full bg-black/50 border border-white/10 p-4 rounded text-white focus:outline-none focus:border-bronze-gold transition-colors font-display text-lg" />
+              </div>
+              <div>
+                <label class="block text-xs uppercase tracking-widest text-gray-500 mb-2">Artistic Style</label>
+                <div class="grid grid-cols-2 gap-3">
+                  <button type="button" data-style-pick="Thư pháp (Traditional)" class="p-3 text-sm border rounded transition-all border-bronze-gold bg-bronze-gold/10 text-white">Thư pháp (Traditional)</button>
+                  <button type="button" data-style-pick="Modern Minimalist" class="p-3 text-sm border rounded transition-all border-white/10 text-gray-500 hover:border-white/30">Modern Minimalist</button>
+                  <button type="button" data-style-pick="Imperial Seal" class="p-3 text-sm border rounded transition-all border-white/10 text-gray-500 hover:border-white/30">Imperial Seal</button>
+                  <button type="button" data-style-pick="Bamboo Script" class="p-3 text-sm border rounded transition-all border-white/10 text-gray-500 hover:border-white/30">Bamboo Script</button>
+                </div>
+              </div>
+              <button type="submit" id="ai-submit" class="w-full py-4 rounded font-bold uppercase tracking-widest flex items-center justify-center gap-2 bg-bronze-gold text-black hover:bg-white hover:shadow-[0_0_20px_rgba(197,160,89,0.5)]">✒ Ink The Meaning</button>
+            </div>
+          </form>
+          <div class="min-h-[500px] glass-panel p-8 rounded-xl border border-white/10 relative flex flex-col text-center">
+            <div id="ai-empty" class="text-gray-600 flex flex-col items-center justify-center flex-grow py-12">
+              <span class="text-5xl mb-4 opacity-20">✨</span>
+              <p class="font-serif italic text-lg">The scroll is waiting for your ink.</p>
+              <p class="text-xs uppercase tracking-widest mt-2 opacity-50">Generate deep cultural insights</p>
+            </div>
+            <div id="ai-output" class="hidden w-full text-left flex-grow overflow-auto max-h-[560px]"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMMUNITY -->
+    <section class="page-section min-h-screen pb-20" data-route="/community" id="page-community">
+      <div class="relative h-[38vh] min-h-[220px] flex items-center justify-center overflow-hidden border-b border-white/10">
+        <div class="absolute inset-0 bg-[url('https://picsum.photos/1920/1080?random=77')] bg-cover bg-center opacity-20"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-ink-black/80 to-ink-black"></div>
+        <div class="relative z-10 text-center px-4">
+          <h1 class="font-display text-4xl md:text-6xl text-bronze-gold mb-3">Cộng đồng</h1>
+          <p class="text-gray-300 font-serif italic max-w-2xl mx-auto">Sự kiện, thảo luận và những người cùng giữ gìn di sản.</p>
+        </div>
+      </div>
+      <div class="container mx-auto px-4 pt-10 -mt-6 relative z-20">
+        <div id="community-stats" class="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-10">
+          <div class="glass-panel rounded-xl p-4 border border-white/10">
+            <span class="font-display text-3xl text-bronze-gold" data-stat="works">—</span>
+            <p class="text-xs uppercase tracking-widest text-gray-500 mt-1">Tác phẩm</p>
+          </div>
+          <div class="glass-panel rounded-xl p-4 border border-white/10">
+            <span class="font-display text-3xl text-jade-green" data-stat="artisans">—</span>
+            <p class="text-xs uppercase tracking-widest text-gray-500 mt-1">Nghệ nhân</p>
+          </div>
+          <div class="glass-panel rounded-xl p-4 border border-white/10">
+            <span class="font-display text-3xl text-bronze-gold" data-stat="sites">—</span>
+            <p class="text-xs uppercase tracking-widest text-gray-500 mt-1">Điểm di sản</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+          <div>
+            <h2 class="font-display text-2xl text-bronze-gold mb-6 flex items-center gap-2">📅 Sự kiện sắp tới</h2>
+            <div id="community-events" class="space-y-4">
+              <p class="text-gray-500 text-sm">Đang tải…</p>
+            </div>
+          </div>
+          <div>
+            <h2 class="font-display text-2xl text-bronze-gold mb-6 flex items-center gap-2">💬 Diễn đàn</h2>
+            <div id="community-threads" class="space-y-3">
+              <p class="text-gray-500 text-sm">Đang tải…</p>
+            </div>
+          </div>
+        </div>
+        <div class="mt-14 glass-panel rounded-xl p-8 border border-bronze-gold/20 max-w-2xl mx-auto text-center">
+          <h3 class="font-display text-xl mb-2">Nhận bản tin di sản</h3>
+          <p class="text-gray-400 text-sm mb-4">Không spam — chỉ gửi khi có sự kiện hoặc nội dung mới.</p>
+          <form id="newsletter-form" class="flex flex-col sm:flex-row gap-3 justify-center">
+            <input type="email" required name="email" placeholder="email@example.com" class="flex-1 min-w-0 bg-black/40 border border-white/10 rounded px-4 py-2 text-sm text-white focus:border-bronze-gold focus:outline-none" />
+            <button type="submit" class="px-6 py-2 bg-bronze-gold text-black font-bold uppercase tracking-widest text-xs hover:bg-white transition">Đăng ký</button>
+          </form>
+          <p id="newsletter-msg" class="hidden mt-3 text-sm text-jade-green"></p>
+        </div>
+        <p id="community-error" class="hidden mt-6 text-center text-sm text-red-400/90">Không tải được dữ liệu cộng đồng.</p>
+      </div>
+    </section>
+
+    <!-- MARKETPLACE -->
+    <section class="page-section min-h-screen pt-8 pb-20" data-route="/marketplace" id="page-marketplace">
+      <div class="container mx-auto px-6">
+        <div class="flex flex-col md:flex-row justify-between items-end mb-8 border-b border-white/10 pb-6 gap-4">
+          <div>
+            <h1 class="font-display text-4xl mb-2">Artisan Marketplace</h1>
+            <p class="text-gray-400 font-serif italic">Curated collections from Vietnam's master craft villages.</p>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+            <input type="search" id="mp-search" placeholder="Tìm sản phẩm…" class="bg-black/40 border border-white/10 rounded px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-bronze-gold focus:outline-none min-w-[200px]" />
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2 mb-10" id="mp-filters">
+          <button type="button" data-mp-cat="all" class="mp-filter px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border border-bronze-gold bg-bronze-gold/10 text-white">Tất cả</button>
+          <button type="button" data-mp-cat="Lacquer" class="mp-filter px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border border-white/20 text-gray-400 hover:border-bronze-gold/50">Lacquer</button>
+          <button type="button" data-mp-cat="Clothing" class="mp-filter px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border border-white/20 text-gray-400 hover:border-bronze-gold/50">Clothing</button>
+          <button type="button" data-mp-cat="Decor" class="mp-filter px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border border-white/20 text-gray-400 hover:border-bronze-gold/50">Decor</button>
+          <button type="button" data-mp-cat="Home" class="mp-filter px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border border-white/20 text-gray-400 hover:border-bronze-gold/50">Home</button>
+          <button type="button" data-mp-cat="Art" class="mp-filter px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border border-white/20 text-gray-400 hover:border-bronze-gold/50">Art</button>
+          <button type="button" data-mp-cat="Ceramics" class="mp-filter px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border border-white/20 text-gray-400 hover:border-bronze-gold/50">Ceramics</button>
+        </div>
+        <p id="mp-empty" class="hidden text-center text-gray-500 py-12">Không có sản phẩm phù hợp.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8" id="mp-grid">
+          <article data-mp-card data-category="Lacquer" data-title="Lacquer Vase Lotus" class="group relative bg-white/5 rounded-sm overflow-hidden border border-white/5 hover:border-bronze-gold/50 transition-all duration-300">
+            <div class="relative h-[400px] overflow-hidden">
+              <img src="https://picsum.photos/300/400?random=10" alt="" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0" />
+              <div class="absolute top-4 right-4 bg-black/70 backdrop-blur px-3 py-1 text-bronze-gold text-sm font-bold">$120</div>
+              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition" aria-label="Cart">🛒</button>
+                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition" aria-label="Favorite">★</button>
+              </div>
+            </div>
+            <div class="p-6">
+              <div class="text-xs text-bronze-gold uppercase tracking-widest mb-1">Lacquer</div>
+              <h3 class="font-display text-xl mb-1">Lacquer Vase "Lotus"</h3>
+              <p class="text-gray-500 text-sm">By Nguyen Minh</p>
+            </div>
+          </article>
+          <article data-mp-card data-category="Clothing" data-title="Silk Ao Dai White" class="group relative bg-white/5 rounded-sm overflow-hidden border border-white/5 hover:border-bronze-gold/50 transition-all duration-300">
+            <div class="relative h-[400px] overflow-hidden">
+              <img src="https://picsum.photos/300/400?random=11" alt="" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0" />
+              <div class="absolute top-4 right-4 bg-black/70 backdrop-blur px-3 py-1 text-bronze-gold text-sm font-bold">$85</div>
+              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition">🛒</button>
+                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition">★</button>
+              </div>
+            </div>
+            <div class="p-6">
+              <div class="text-xs text-bronze-gold uppercase tracking-widest mb-1">Clothing</div>
+              <h3 class="font-display text-xl mb-1">Silk Ao Dai - White</h3>
+              <p class="text-gray-500 text-sm">By Silk Village</p>
+            </div>
+          </article>
+          <article data-mp-card data-category="Decor" data-title="Bronze Drum Replica" class="group relative bg-white/5 rounded-sm overflow-hidden border border-white/5 hover:border-bronze-gold/50 transition-all duration-300">
+            <div class="relative h-[400px] overflow-hidden">
+              <img src="https://picsum.photos/300/400?random=12" alt="" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0" />
+              <div class="absolute top-4 right-4 bg-black/70 backdrop-blur px-3 py-1 text-bronze-gold text-sm font-bold">$350</div>
+              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition">🛒</button>
+                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition">★</button>
+              </div>
+            </div>
+            <div class="p-6">
+              <div class="text-xs text-bronze-gold uppercase tracking-widest mb-1">Decor</div>
+              <h3 class="font-display text-xl mb-1">Bronze Drum Replica</h3>
+              <p class="text-gray-500 text-sm">By Dong Son Arts</p>
+            </div>
+          </article>
+          <article data-mp-card data-category="Home" data-title="Bamboo Tea Set" class="group relative bg-white/5 rounded-sm overflow-hidden border border-white/5 hover:border-bronze-gold/50 transition-all duration-300">
+            <div class="relative h-[400px] overflow-hidden">
+              <img src="https://picsum.photos/300/400?random=13" alt="" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0" />
+              <div class="absolute top-4 right-4 bg-black/70 backdrop-blur px-3 py-1 text-bronze-gold text-sm font-bold">$45</div>
+              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition">🛒</button>
+                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition">★</button>
+              </div>
+            </div>
+            <div class="p-6">
+              <div class="text-xs text-bronze-gold uppercase tracking-widest mb-1">Home</div>
+              <h3 class="font-display text-xl mb-1">Bamboo Tea Set</h3>
+              <p class="text-gray-500 text-sm">By EcoCraft</p>
+            </div>
+          </article>
+          <article data-mp-card data-category="Art" data-title="Embroidered Painting" class="group relative bg-white/5 rounded-sm overflow-hidden border border-white/5 hover:border-bronze-gold/50 transition-all duration-300">
+            <div class="relative h-[400px] overflow-hidden">
+              <img src="https://picsum.photos/300/400?random=14" alt="" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0" />
+              <div class="absolute top-4 right-4 bg-black/70 backdrop-blur px-3 py-1 text-bronze-gold text-sm font-bold">$200</div>
+              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition">🛒</button>
+                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition">★</button>
+              </div>
+            </div>
+            <div class="p-6">
+              <div class="text-xs text-bronze-gold uppercase tracking-widest mb-1">Art</div>
+              <h3 class="font-display text-xl mb-1">Embroidered Painting</h3>
+              <p class="text-gray-500 text-sm">By XQ Da Lat</p>
+            </div>
+          </article>
+          <article data-mp-card data-category="Ceramics" data-title="Ceramic Tea Pot" class="group relative bg-white/5 rounded-sm overflow-hidden border border-white/5 hover:border-bronze-gold/50 transition-all duration-300">
+            <div class="relative h-[400px] overflow-hidden">
+              <img src="https://picsum.photos/300/400?random=15" alt="" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0" />
+              <div class="absolute top-4 right-4 bg-black/70 backdrop-blur px-3 py-1 text-bronze-gold text-sm font-bold">$60</div>
+              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition">🛒</button>
+                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition">★</button>
+              </div>
+            </div>
+            <div class="p-6">
+              <div class="text-xs text-bronze-gold uppercase tracking-widest mb-1">Ceramics</div>
+              <h3 class="font-display text-xl mb-1">Ceramic Tea Pot</h3>
+              <p class="text-gray-500 text-sm">By Bat Trang</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bg-black/80 border-t border-white/10 pt-16 pb-8 text-center md:text-left relative overflow-hidden mt-auto">
+    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-bronze-gold to-transparent opacity-50"></div>
+    <div class="container mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 relative z-10">
+      <div>
+        <h4 class="font-display text-bronze-gold text-2xl mb-4">VIET HERITAGE</h4>
+        <p class="text-gray-400 text-sm leading-relaxed mb-6">Bridging the gap between ancient traditions and future technology. Preserving the soul of Vietnam in the digital era.</p>
+      </div>
+      <div>
+        <h5 class="font-bold text-white uppercase tracking-widest text-sm mb-4">Explore</h5>
+        <ul class="space-y-2 text-gray-400 text-sm">
+          <li><a href="#/history" class="hover:text-bronze-gold transition">Timeline</a></li>
+          <li><a href="#/map" class="hover:text-bronze-gold transition">Interactive Map</a></li>
+          <li><a href="#/ai" class="hover:text-bronze-gold transition">AI Studio</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5 class="font-bold text-white uppercase tracking-widest text-sm mb-4">Community</h5>
+        <ul class="space-y-2 text-gray-400 text-sm">
+          <li><a href="#/community" class="hover:text-bronze-gold transition">Events</a></li>
+          <li><a href="#/marketplace" class="hover:text-bronze-gold transition">Marketplace</a></li>
+          <li><a href="#" class="hover:text-bronze-gold transition">Artisans</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5 class="font-bold text-white uppercase tracking-widest text-sm mb-4">Daily Wisdom</h5>
+        <blockquote class="italic text-gray-400 font-serif border-l-2 border-bronze-gold pl-4">"Uống nước nhớ nguồn"<br /><span class="text-xs not-italic text-gray-500 mt-1 block">(When drinking water, remember the source)</span></blockquote>
+      </div>
+    </div>
+    <div class="mt-16 pt-8 border-t border-white/5 text-center text-xs text-gray-600 uppercase tracking-widest">
+      © <span id="year"></span> Viet Heritage Hub. Neo-Heritage Design System.
+    </div>
+  </footer>
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+  <script src="js/app.js"></script>
+</body>
+</html>

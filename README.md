@@ -43,36 +43,23 @@ Viet Heritage Hub is an integrated web platform designed to digitize and promote
 - MVC architecture
 
 ### Frontend
-- **React.js** with modern hooks
-- **Leaflet** for interactive maps
-- **Axios** for API communication
+- **HTML, CSS, and JavaScript** (Tailwind via CDN; Chart.js for timeline chart; marked for AI markdown)
+- Hash-based navigation (`#/`, `#/history`, …); API calls use `fetch` to `/api/...`
 
 ### AI Integration
 - Custom AI models for calligraphy generation
 - Image restoration algorithms
 - Multi-language text-to-speech
 
-## Project Structure
+## Project Structure (PBL5 repo)
 
 ```
-viet-heritage-hub/
-├── backend/                 # Node.js/Express backend
-│   ├── controllers/         # Request handlers
-│   ├── models/             # Database models
-│   ├── routes/             # API routes
-│   ├── views/              # EJS templates
-│   ├── config/             # Configuration files
-│   └── app.js              # Main application
-├── frontend/                # React frontend
-│   ├── src/
-│   │   ├── components/     # Reusable components
-│   │   ├── pages/          # Page components
-│   │   └── assets/         # Static assets
-│   └── public/             # Public assets
-├── database/                # Database files
-│   ├── schema.sql          # Database schema
-│   └── seeds/              # Sample data
-├── docs/                   # Documentation
+PBL5/
+├── backend/                 # Node.js/Express API
+├── frontend/                # Main UI: HTML / CSS / JavaScript (served by Express)
+├── viet-heritage-hub/       # Optional: earlier Vite + React prototype (unchanged)
+├── database/                # schema.sql, seeds/
+├── docs/
 └── README.md
 ```
 
@@ -104,11 +91,7 @@ cd backend
 npm install
 ```
 
-3. Install frontend dependencies
-```bash
-cd ../frontend
-npm install
-```
+3. The web UI lives in `frontend/` (static files; no npm install required for the UI itself).
 
 4. Set up the database
 ```bash
@@ -118,20 +101,19 @@ mysql -u root -p < schema.sql
 
 5. Configure environment variables
 ```bash
-cp backend/.env.example backend/.env
-# Edit .env with your database credentials
+# Backend: optional backend/.env with DB_*, PORT, and GEMINI_API_KEY (AI Studio uses the key on the server)
 ```
 
-6. Start the development servers
+6. Start the backend (serves the static UI from `frontend/` on the same port)
 ```bash
-# Backend
-cd backend
-npm run dev
-
-# Frontend (new terminal)
-cd frontend
-npm start
+cd ..   # repo root (PBL5)
+npm install          # optional: root devDependencies (concurrently, etc.)
+npm run install:all  # installs backend dependencies only
+npm run dev          # or: cd backend && npm run dev
+# Open http://localhost:3000 — hash routes: #/, #/history, #/ai, …
 ```
+
+7. Optional: the folder `viet-heritage-hub/` is a separate Vite/React copy; the product UI is `frontend/`.
 
 ## API Documentation
 

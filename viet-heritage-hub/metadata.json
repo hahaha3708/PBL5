@@ -1,0 +1,7 @@
+{
+  "name": "Viet Heritage Hub",
+  "description": "An immersive neo-heritage platform digitizing Vietnamese culture through 3D visualization, AI, and community.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

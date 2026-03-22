@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HeritageVN — Dòng Chảy Di Sản</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,700&family=IM+Fell+English+SC&family=Cinzel+Decorative:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root {
+            --son-mai:    #8B1A10;
+            --son-deep:   #3D0A05;
+            --son-black:  #0A0000;
+            --vang-dong:  #C9961A;
+            --vang-light: #E8C84A;
+            --vang-pale:  #F5E6A3;
+            --kem:        #FDF4E3;
+            --trang:      #FFFFFF;
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            background: var(--son-black);
+            color: var(--kem);
+            font-family: 'Cormorant Garamond', serif;
+            overflow-x: hidden;
+            cursor: none;
+        }
+
+        /* ─── CUSTOM CURSOR ─── */
+        #cursor {
+            position: fixed; top: 0; left: 0; z-index: 9999;
+            width: 12px; height: 12px;
+            background: var(--vang-dong);
+            border-radius: 50%;
+            pointer-events: none;
+            mix-blend-mode: screen;
+            transition: transform 0.15s ease;
+        }
+        #cursor-ring {
+            position: fixed; top: 0; left: 0; z-index: 9998;
+            width: 40px; height: 40px;
+            border: 1px solid rgba(201,150,26,0.5);
+            border-radius: 50%;
+            pointer-events: none;
+            transition: transform 0.4s ease, width 0.3s, height 0.3s, border-color 0.3s;
+        }
+        body:has(a:hover) #cursor-ring,
+        body:has(button:hover) #cursor-ring {
+            width: 60px; height: 60px;
+            border-color: var(--vang-light);
+        }
+
+        /* ─── CANVAS ─── */
+        #canvas-container {
+            position: fixed; inset: 0; z-index: 0;
+        }
+
+        /* ─── NOISE GRAIN ─── */
+        .grain {
+            position: fixed; inset: 0; z-index: 2;
+            pointer-events: none;
+            opacity: 0.04;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            background-repeat: repeat;
+            background-size: 256px 256px;
+        }
+
+        /* ─── VIGNETTE ─── */
+        .vignette {
+            position: fixed; inset: 0; z-index: 3;
+            pointer-events: none;
+            background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.85) 100%);
+        }
+
+        /* ─── DECORATIVE BORDER ─── */
+        .border-frame {
+            position: fixed; inset: 0; z-index: 5; pointer-events: none;
+        }
+        .border-frame::before {
+            content: '';
+            position: absolute; inset: 16px;
+            border: 1px solid rgba(201,150,26,0.25);
+        }
+        .border-frame::after {
+            content: '';
+            position: absolute; inset: 22px;
+            border: 1px solid rgba(201,150,26,0.08);
+        }
+
+        /* Corner ornaments */
+        .corner {
+            position: fixed; z-index: 6; pointer-events: none;
+            width: 60px; height: 60px;
+        }
+        .corner svg { width: 100%; height: 100%; }
+        .corner--tl { top: 12px; left: 12px; }
+        .corner--tr { top: 12px; right: 12px; transform: scaleX(-1); }
+        .corner--bl { bottom: 12px; left: 12px; transform: scaleY(-1); }
+        .corner--br { bottom: 12px; right: 12px; transform: scale(-1); }
+
+        /* ─── HERO SECTION ─── */
+        #hero {
+            position: relative; z-index: 10;
+            min-height: 100vh;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        /* Year / Tagline */
+        .hero-eyebrow {
+            font-family: 'IM Fell English SC', serif;
+            font-size: clamp(0.6rem, 1.5vw, 0.85rem);
+            letter-spacing: 0.5em;
+            color: var(--vang-dong);
+            opacity: 0;
+            transform: translateY(16px);
+            margin-bottom: 2.5rem;
+            display: flex; align-items: center; gap: 1.5rem;
+        }
+        .hero-eyebrow span { display: block; width: 40px; height: 1px; background: var(--vang-dong); opacity: 0.6; }
+
+        /* Emblem */
+        .emblem {
+            width: clamp(80px, 10vw, 120px);
+            height: clamp(80px, 10vw, 120px);
+            margin: 0 auto 2rem;
+            opacity: 0; transform: scale(0.6);
+        }
+        .emblem svg { width: 100%; height: 100%; }
+
+        /* Main title */
+        .hero-title {
+            font-family: 'Cinzel Decorative', serif;
+            font-size: clamp(2.8rem, 8vw, 7rem);
+            font-weight: 400;
+            line-height: 1.1;
+            letter-spacing: 0.05em;
+            background: linear-gradient(135deg, var(--vang-dong) 0%, var(--vang-pale) 40%, var(--vang-light) 60%, var(--vang-dong) 100%);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gold-shift 6s ease-in-out infinite;
+            opacity: 0; transform: translateY(30px);
+            margin-bottom: 0.5rem;
+        }
+        @keyframes gold-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* Sub-title */
+        .hero-sub {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: clamp(1.1rem, 2.5vw, 1.6rem);
+            font-weight: 300;
+            color: rgba(253,244,227,0.6);
+            letter-spacing: 0.3em;
+            opacity: 0; transform: translateY(20px);
+            margin-bottom: 2.5rem;
+        }
+
+        /* Divider */
+        .hero-divider {
+            display: flex; align-items: center; gap: 1.5rem;
+            width: min(600px, 90%); margin: 0 auto 3rem;
+            opacity: 0;
+        }
+        .hero-divider-line { flex: 1; height: 1px; background: linear-gradient(to right, transparent, var(--vang-dong), transparent); }
+        .hero-divider-icon { color: var(--vang-dong); font-size: 1.2rem; }
+
+        /* Description */
+        .hero-desc {
+            font-size: clamp(0.95rem, 1.8vw, 1.15rem);
+            font-weight: 300;
+            line-height: 1.9;
+            color: rgba(253,244,227,0.7);
+            max-width: 540px;
+            margin: 0 auto 3.5rem;
+            opacity: 0; transform: translateY(16px);
+        }
+
+        /* CTA Buttons */
+        .cta-group {
+            display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap;
+            opacity: 0; transform: translateY(16px);
+        }
+
+        .btn-primary {
+            position: relative;
+            padding: 1rem 2.8rem;
+            font-family: 'IM Fell English SC', serif;
+            font-size: 0.85rem;
+            letter-spacing: 0.3em;
+            color: var(--son-black);
+            background: linear-gradient(135deg, var(--vang-dong), var(--vang-light), var(--vang-dong));
+            background-size: 200% 100%;
+            border: none;
+            cursor: none;
+            text-decoration: none;
+            display: inline-block;
+            transition: background-position 0.4s ease, transform 0.3s ease, box-shadow 0.3s ease;
+            clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+        }
+        .btn-primary:hover {
+            background-position: 100% 0;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 40px rgba(201,150,26,0.5);
+        }
+
+        .btn-secondary {
+            padding: 1rem 2.8rem;
+            font-family: 'IM Fell English SC', serif;
+            font-size: 0.85rem;
+            letter-spacing: 0.3em;
+            color: var(--vang-dong);
+            background: transparent;
+            border: 1px solid rgba(201,150,26,0.4);
+            cursor: none;
+            text-decoration: none;
+            display: inline-block;
+            transition: border-color 0.3s, color 0.3s, transform 0.3s, background 0.3s;
+            clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+        }
+        .btn-secondary:hover {
+            border-color: var(--vang-dong);
+            background: rgba(201,150,26,0.08);
+            color: var(--vang-light);
+            transform: translateY(-2px);
+        }
+
+        /* ─── SCROLL INDICATOR ─── */
+        .scroll-hint {
+            position: fixed; bottom: 36px; left: 50%; transform: translateX(-50%);
+            z-index: 20;
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            opacity: 0;
+        }
+        .scroll-hint-text {
+            font-family: 'IM Fell English SC', serif;
+            font-size: 0.65rem; letter-spacing: 0.35em;
+            color: rgba(201,150,26,0.6);
+        }
+        .scroll-hint-line {
+            width: 1px; height: 40px;
+            background: linear-gradient(to bottom, var(--vang-dong), transparent);
+            animation: scroll-pulse 2s ease-in-out infinite;
+        }
+        @keyframes scroll-pulse {
+            0%, 100% { opacity: 0.3; transform: scaleY(1); }
+            50% { opacity: 1; transform: scaleY(1.2); }
+        }
+
+        /* ─── NAV ─── */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            padding: 1.8rem 3rem;
+            display: flex; align-items: center; justify-content: space-between;
+            opacity: 0;
+        }
+        nav::after {
+            content: '';
+            position: absolute; bottom: 0; left: 3rem; right: 3rem;
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(201,150,26,0.25), transparent);
+        }
+
+        .nav-logo {
+            font-family: 'IM Fell English SC', serif;
+            font-size: 0.9rem; letter-spacing: 0.35em;
+            color: var(--vang-dong);
+            text-decoration: none;
+            cursor: none;
+        }
+        .nav-links {
+            display: flex; gap: 3rem; list-style: none;
+        }
+        .nav-links a {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: 0.9rem; letter-spacing: 0.15em;
+            color: rgba(253,244,227,0.55);
+            text-decoration: none; cursor: none;
+            transition: color 0.3s;
+            position: relative;
+        }
+        .nav-links a::after {
+            content: '';
+            position: absolute; bottom: -4px; left: 0; right: 0;
+            height: 1px; background: var(--vang-dong);
+            transform: scaleX(0); transform-origin: right;
+            transition: transform 0.3s ease;
+        }
+        .nav-links a:hover { color: var(--vang-dong); }
+        .nav-links a:hover::after { transform: scaleX(1); transform-origin: left; }
+
+        /* ─── FLOATING NUMBERS ─── */
+        .float-nums {
+            position: fixed; z-index: 4; pointer-events: none;
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic; font-size: 9rem; font-weight: 700;
+            color: rgba(201,150,26,0.035);
+            letter-spacing: -0.05em; line-height: 1;
+            user-select: none;
+        }
+        .float-nums.left  { left: -1rem; top: 50%; transform: translateY(-50%) rotate(-90deg); }
+        .float-nums.right { right: -1rem; top: 50%; transform: translateY(-50%) rotate(90deg); }
+
+        /* ─── STATS ROW ─── */
+        .stats-row {
+            position: fixed; right: 40px; top: 50%;
+            transform: translateY(-50%);
+            z-index: 10; display: flex; flex-direction: column; gap: 2rem;
+            opacity: 0;
+        }
+        .stat-item { text-align: right; }
+        .stat-num {
+            font-family: 'Cinzel Decorative', serif;
+            font-size: 1.6rem; color: var(--vang-dong);
+            line-height: 1;
+        }
+        .stat-label {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.7rem; letter-spacing: 0.2em;
+            color: rgba(253,244,227,0.35); margin-top: 2px;
+        }
+
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 768px) {
+            nav { padding: 1.2rem 1.5rem; }
+            .nav-links { display: none; }
+            .stats-row { display: none; }
+            .float-nums { display: none; }
+            .hero-title { font-size: clamp(2rem, 10vw, 3.5rem); }
+        }
+    </style>
+
+    <script type="importmap">
+        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
+    </script>
+</head>
+<body>
+
+<!-- Custom Cursor -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- Overlays -->
+<div class="grain"></div>
+<div class="vignette"></div>
+<div class="border-frame"></div>
+
+<!-- Corner ornaments -->
+<div class="corner corner--tl">
+    <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 56 L4 4 L56 4" stroke="#C9961A" stroke-width="1" stroke-opacity="0.5"/>
+        <path d="M4 36 L4 4 L36 4" stroke="#C9961A" stroke-width="0.5" stroke-opacity="0.3"/>
+        <circle cx="4" cy="4" r="3" fill="#C9961A" fill-opacity="0.7"/>
+        <circle cx="4" cy="4" r="1.5" fill="#E8C84A"/>
+    </svg>
+</div>
+<div class="corner corner--tr">
+    <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 56 L4 4 L56 4" stroke="#C9961A" stroke-width="1" stroke-opacity="0.5"/>
+        <path d="M4 36 L4 4 L36 4" stroke="#C9961A" stroke-width="0.5" stroke-opacity="0.3"/>
+        <circle cx="4" cy="4" r="3" fill="#C9961A" fill-opacity="0.7"/>
+        <circle cx="4" cy="4" r="1.5" fill="#E8C84A"/>
+    </svg>
+</div>
+<div class="corner corner--bl">
+    <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 56 L4 4 L56 4" stroke="#C9961A" stroke-width="1" stroke-opacity="0.5"/>
+        <path d="M4 36 L4 4 L36 4" stroke="#C9961A" stroke-width="0.5" stroke-opacity="0.3"/>
+        <circle cx="4" cy="4" r="3" fill="#C9961A" fill-opacity="0.7"/>
+        <circle cx="4" cy="4" r="1.5" fill="#E8C84A"/>
+    </svg>
+</div>
+<div class="corner corner--br">
+    <svg viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 56 L4 4 L56 4" stroke="#C9961A" stroke-width="1" stroke-opacity="0.5"/>
+        <path d="M4 36 L4 4 L36 4" stroke="#C9961A" stroke-width="0.5" stroke-opacity="0.3"/>
+        <circle cx="4" cy="4" r="3" fill="#C9961A" fill-opacity="0.7"/>
+        <circle cx="4" cy="4" r="1.5" fill="#E8C84A"/>
+    </svg>
+</div>
+
+<!-- Canvas -->
+<div id="canvas-container"></div>
+
+<!-- Floating decorative numbers -->
+<div class="float-nums left">IV</div>
+<div class="float-nums right">III</div>
+
+<!-- Nav -->
+<nav id="main-nav">
+    <a href="#" class="nav-logo">Heritage<span style="color:rgba(253,244,227,0.35)">VN</span></a>
+    <ul class="nav-links">
+        <li><a href="#explore">Bộ Sưu Tập</a></li>
+        <li><a href="#about">Di Sản</a></li>
+        <li><a href="#gallery">Triển Lãm</a></li>
+        <li><a href="#contact">Liên Hệ</a></li>
+    </ul>
+</nav>
+
+<!-- Side Stats -->
+<div class="stats-row" id="stats-row">
+    <div class="stat-item">
+        <div class="stat-num" id="stat1">0</div>
+        <div class="stat-label">Tác Phẩm</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-num" id="stat2">0</div>
+        <div class="stat-label">Nghệ Nhân</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-num" id="stat3">0</div>
+        <div class="stat-label">Di Tích</div>
+    </div>
+</div>
+
+<!-- Hero Section -->
+<section id="hero">
+    <div class="hero-eyebrow" id="el-eyebrow">
+        <span></span>
+        Từ Thế Kỷ III TCN — Hiện Tại
+        <span></span>
+    </div>
+
+    <!-- Emblem / Trống Đồng symbol -->
+    <div class="emblem" id="el-emblem">
+        <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="60" cy="60" r="56" stroke="#C9961A" stroke-width="0.8" stroke-opacity="0.4"/>
+            <circle cx="60" cy="60" r="48" stroke="#C9961A" stroke-width="0.5" stroke-opacity="0.3"/>
+            <circle cx="60" cy="60" r="38" stroke="#C9961A" stroke-width="1.5" stroke-opacity="0.7"/>
+            <circle cx="60" cy="60" r="24" stroke="#E8C84A" stroke-width="0.8" stroke-opacity="0.5"/>
+            <circle cx="60" cy="60" r="10" fill="#C9961A" fill-opacity="0.15" stroke="#E8C84A" stroke-width="1"/>
+            <circle cx="60" cy="60" r="4" fill="#E8C84A" fill-opacity="0.9"/>
+            <!-- Radial spokes -->
+            <line x1="60" y1="4" x2="60" y2="22" stroke="#C9961A" stroke-width="1" stroke-opacity="0.5"/>
+            <line x1="60" y1="98" x2="60" y2="116" stroke="#C9961A" stroke-width="1" stroke-opacity="0.5"/>
+            <line x1="4" y1="60" x2="22" y2="60" stroke="#C9961A" stroke-width="1" stroke-opacity="0.5"/>
+            <line x1="98" y1="60" x2="116" y2="60" stroke="#C9961A" stroke-width="1" stroke-opacity="0.5"/>
+            <line x1="11.8" y1="11.8" x2="24.5" y2="24.5" stroke="#C9961A" stroke-width="1" stroke-opacity="0.35"/>
+            <line x1="95.5" y1="95.5" x2="108.2" y2="108.2" stroke="#C9961A" stroke-width="1" stroke-opacity="0.35"/>
+            <line x1="108.2" y1="11.8" x2="95.5" y2="24.5" stroke="#C9961A" stroke-width="1" stroke-opacity="0.35"/>
+            <line x1="24.5" y1="95.5" x2="11.8" y2="108.2" stroke="#C9961A" stroke-width="1" stroke-opacity="0.35"/>
+            <!-- Decorative tick marks on outer ring -->
+            <circle cx="60" cy="8" r="1.5" fill="#E8C84A" fill-opacity="0.8"/>
+            <circle cx="60" cy="112" r="1.5" fill="#E8C84A" fill-opacity="0.8"/>
+            <circle cx="8" cy="60" r="1.5" fill="#E8C84A" fill-opacity="0.8"/>
+            <circle cx="112" cy="60" r="1.5" fill="#E8C84A" fill-opacity="0.8"/>
+        </svg>
+    </div>
+
+    <h1 class="hero-title" id="el-title">Dòng Chảy<br>Di Sản</h1>
+
+    <p class="hero-sub" id="el-sub">Heritage of Vietnam</p>
+
+    <div class="hero-divider" id="el-divider">
+        <div class="hero-divider-line"></div>
+        <div class="hero-divider-icon">✦</div>
+        <div class="hero-divider-line"></div>
+    </div>
+
+    <p class="hero-desc" id="el-desc">
+        Khám phá tinh hoa văn hóa và di sản Việt Nam qua hành trình số hóa — nơi nghệ thuật sơn mài nghìn năm gặp gỡ thế giới kỹ thuật số đương đại.
+    </p>
+
+    <div class="cta-group" id="el-cta">
+        <a href="#explore" class="btn-primary">Khám Phá Ngay</a>
+        <a href="#about" class="btn-secondary">Tìm Hiểu Thêm</a>
+    </div>
+</section>
+
+<!-- Scroll indicator -->
+<div class="scroll-hint" id="scroll-hint">
+    <div class="scroll-hint-text">Cuộn Xuống</div>
+    <div class="scroll-hint-line"></div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+// ─── CURSOR ───
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursor-ring');
+let mx = -200, my = -200, rx = -200, ry = -200;
+
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+
+function updateCursor() {
+    cursor.style.transform = `translate(${mx - 6}px, ${my - 6}px)`;
+    rx += (mx - rx) * 0.12;
+    ry += (my - ry) * 0.12;
+    ring.style.transform = `translate(${rx - 20}px, ${ry - 20}px)`;
+    requestAnimationFrame(updateCursor);
+}
+updateCursor();
+
+// ─── THREE.JS SCENE ───
+const container = document.getElementById('canvas-container');
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
+camera.position.z = 9;
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+container.appendChild(renderer.domElement);
+
+// Lighting — dramatic golden rim light
+const ambient = new THREE.AmbientLight(0x1a0800, 0.8);
+scene.add(ambient);
+
+const rimLight = new THREE.PointLight(0xD4AF37, 3, 20);
+rimLight.position.set(6, 4, 4);
+scene.add(rimLight);
+
+const rimLight2 = new THREE.PointLight(0x8B1A10, 2, 15);
+rimLight2.position.set(-6, -3, 2);
+scene.add(rimLight2);
+
+const fillLight = new THREE.DirectionalLight(0xffeebb, 0.6);
+fillLight.position.set(0, 5, 5);
+scene.add(fillLight);
+
+// ─── PARTICLES ───
+const N = 18000;
+const geo = new THREE.IcosahedronGeometry(0.012, 0);
+
+// Two materials for visual variety
+const matGold = new THREE.MeshStandardMaterial({ color: 0xD4AF37, metalness: 1, roughness: 0.05 });
+const matRed  = new THREE.MeshStandardMaterial({ color: 0x922B21, metalness: 0.8, roughness: 0.2 });
+
+const meshGold = new THREE.InstancedMesh(geo, matGold, Math.floor(N * 0.75));
+const meshRed  = new THREE.InstancedMesh(geo, matRed,  Math.floor(N * 0.25));
+scene.add(meshGold);
+scene.add(meshRed);
+
+const dummy = new THREE.Object3D();
+
+// Store initial (scattered) and target positions
+const posGold = new Float32Array(Math.floor(N * 0.75) * 3);
+const posRed  = new Float32Array(Math.floor(N * 0.25) * 3);
+
+function trOngDong(i, total) {
+    // Hollow sphere — inspired by Trống Đồng silhouette
+    const t = i / total;
+    const layers = 3;
+    const layer = Math.floor(t * layers);
+    const r = 2.2 + layer * 0.25 + (Math.random() - 0.5) * 0.12;
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos((Math.random() * 2) - 1);
+    return [
+        r * Math.sin(phi) * Math.cos(theta),
+        r * Math.sin(phi) * Math.sin(theta),
+        r * Math.cos(phi) * 0.55 // flatten slightly to disc-like shape
+    ];
+}
+
+for (let i = 0; i < posGold.length / 3; i++) {
+    posGold[i*3]   = (Math.random()-0.5)*18;
+    posGold[i*3+1] = (Math.random()-0.5)*18;
+    posGold[i*3+2] = (Math.random()-0.5)*18;
+    dummy.position.set(posGold[i*3], posGold[i*3+1], posGold[i*3+2]);
+    dummy.updateMatrix();
+    meshGold.setMatrixAt(i, dummy.matrix);
+}
+meshGold.instanceMatrix.needsUpdate = true;
+
+for (let i = 0; i < posRed.length / 3; i++) {
+    posRed[i*3]   = (Math.random()-0.5)*18;
+    posRed[i*3+1] = (Math.random()-0.5)*18;
+    posRed[i*3+2] = (Math.random()-0.5)*18;
+    dummy.position.set(posRed[i*3], posRed[i*3+1], posRed[i*3+2]);
+    dummy.updateMatrix();
+    meshRed.setMatrixAt(i, dummy.matrix);
+}
+meshRed.instanceMatrix.needsUpdate = true;
+
+// Target positions
+const tgtGold = new Float32Array(posGold.length);
+const tgtRed  = new Float32Array(posRed.length);
+
+for (let i = 0; i < posGold.length / 3; i++) {
+    const p = trOngDong(i, posGold.length / 3);
+    tgtGold[i*3]=p[0]; tgtGold[i*3+1]=p[1]; tgtGold[i*3+2]=p[2];
+}
+for (let i = 0; i < posRed.length / 3; i++) {
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos((Math.random() * 2) - 1);
+    const r = 2.8 + (Math.random()-0.5)*0.15;
+    tgtRed[i*3]   = r * Math.sin(phi) * Math.cos(theta);
+    tgtRed[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+    tgtRed[i*3+2] = r * Math.cos(phi) * 0.4;
+}
+
+// ─── GSAP INTRO ───
+setTimeout(() => {
+    // Converge particles
+    for (let i = 0; i < posGold.length / 3; i++) {
+        const d = 2.5 + Math.random() * 2;
+        const delay = Math.random() * 1.2;
+        gsap.to(posGold, {
+            duration: d, delay,
+            [i*3]:   tgtGold[i*3],
+            [i*3+1]: tgtGold[i*3+1],
+            [i*3+2]: tgtGold[i*3+2],
+            ease: 'expo.inOut'
+        });
+    }
+    for (let i = 0; i < posRed.length / 3; i++) {
+        gsap.to(posRed, {
+            duration: 3 + Math.random() * 2.5,
+            delay: 0.5 + Math.random() * 1.5,
+            [i*3]:   tgtRed[i*3],
+            [i*3+1]: tgtRed[i*3+1],
+            [i*3+2]: tgtRed[i*3+2],
+            ease: 'expo.inOut'
+        });
+    }
+
+    // Staggered UI reveal
+    const tl = gsap.timeline({ delay: 1.2 });
+    tl.to('#main-nav', { opacity: 1, duration: 1, ease: 'power2.out' })
+      .to('#el-eyebrow', { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }, '-=0.3')
+      .to('#el-emblem', { opacity: 1, scale: 1, duration: 1.2, ease: 'back.out(1.4)' }, '-=0.4')
+      .to('#el-title', { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, '-=0.6')
+      .to('#el-sub', { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }, '-=0.5')
+      .to('#el-divider', { opacity: 1, duration: 0.8, ease: 'power2.out' }, '-=0.4')
+      .to('#el-desc', { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }, '-=0.4')
+      .to('#el-cta', { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' }, '-=0.3')
+      .to('#scroll-hint', { opacity: 1, duration: 1, ease: 'power2.out' }, '-=0.2')
+      .to('#stats-row', { opacity: 1, duration: 1, ease: 'power2.out' }, '-=0.8');
+
+    // Counter animation
+    gsap.to({ val: 0 }, {
+        val: 247, duration: 2.5, delay: 3, ease: 'power2.out',
+        onUpdate: function() { document.getElementById('stat1').textContent = Math.round(this.targets()[0].val); }
+    });
+    gsap.to({ val: 0 }, {
+        val: 58, duration: 2.5, delay: 3.2, ease: 'power2.out',
+        onUpdate: function() { document.getElementById('stat2').textContent = Math.round(this.targets()[0].val); }
+    });
+    gsap.to({ val: 0 }, {
+        val: 34, duration: 2.5, delay: 3.4, ease: 'power2.out',
+        onUpdate: function() { document.getElementById('stat3').textContent = Math.round(this.targets()[0].val); }
+    });
+
+}, 300);
+
+// ─── MOUSE INTERACTION ───
+const mouse3 = new THREE.Vector2(9999, 9999);
+const raycaster = new THREE.Raycaster();
+const plane = new THREE.Plane(new THREE.Vector3(0,0,1), 0);
+const mWorld = new THREE.Vector3();
+
+window.addEventListener('mousemove', e => {
+    mouse3.x = (e.clientX / innerWidth) * 2 - 1;
+    mouse3.y = -(e.clientY / innerHeight) * 2 + 1;
+    raycaster.setFromCamera(mouse3, camera);
+    raycaster.ray.intersectPlane(plane, mWorld);
+});
+
+// ─── PARALLAX ───
+let parallaxX = 0, parallaxY = 0;
+window.addEventListener('mousemove', e => {
+    parallaxX = (e.clientX / innerWidth - 0.5) * 2;
+    parallaxY = (e.clientY / innerHeight - 0.5) * 2;
+});
+
+// ─── ANIMATION LOOP ───
+const clock = new THREE.Clock();
+function animate() {
+    requestAnimationFrame(animate);
+    const t = clock.getElapsedTime();
+
+    // Gentle camera parallax
+    camera.position.x += (parallaxX * 0.8 - camera.position.x) * 0.02;
+    camera.position.y += (-parallaxY * 0.4 - camera.position.y) * 0.02;
+
+    // Slow rotation
+    meshGold.rotation.y = t * 0.06;
+    meshGold.rotation.z = Math.sin(t * 0.07) * 0.04;
+    meshRed.rotation.y  = -t * 0.04;
+    meshRed.rotation.x  = Math.sin(t * 0.05) * 0.03;
+
+    // Pulse rim light
+    rimLight.intensity = 2.5 + Math.sin(t * 1.3) * 0.5;
+
+    // Mouse repulsion for gold particles
+    for (let i = 0; i < posGold.length / 3; i++) {
+        let tx = posGold[i*3], ty = posGold[i*3+1], tz = posGold[i*3+2];
+        dummy.position.set(tx, ty, tz);
+        meshGold.localToWorld(dummy.position);
+        const d = dummy.position.distanceTo(mWorld);
+        if (d < 1.8) {
+            const f = (1.8 - d) / 1.8;
+            tx += Math.sin(t * 3 + i * 0.1) * f * 0.15;
+            ty += Math.cos(t * 3 + i * 0.1) * f * 0.15;
+            tz += (Math.random()-0.5) * f * 0.1;
+        }
+        // Subtle organic breathing
+        tx += Math.sin(t * 0.5 + i * 0.01) * 0.003;
+        ty += Math.cos(t * 0.5 + i * 0.013) * 0.003;
+        dummy.position.set(tx, ty, tz);
+        dummy.rotation.set(t*0.2+i, t*0.3+i, 0);
+        dummy.updateMatrix();
+        meshGold.setMatrixAt(i, dummy.matrix);
+    }
+    meshGold.instanceMatrix.needsUpdate = true;
+
+    for (let i = 0; i < posRed.length / 3; i++) {
+        dummy.position.set(posRed[i*3], posRed[i*3+1], posRed[i*3+2]);
+        dummy.rotation.set(t*0.1+i, t*0.15+i, 0);
+        dummy.updateMatrix();
+        meshRed.setMatrixAt(i, dummy.matrix);
+    }
+    meshRed.instanceMatrix.needsUpdate = true;
+
+    renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>
