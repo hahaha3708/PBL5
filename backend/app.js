@@ -16,6 +16,7 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const productRoutes = require('./routes/productRoutes');
 const heritageRoutes = require('./routes/heritageRoutes');
+const shopRoutes = require('./routes/shopRoutes');
 const apiRoutes = require('./routes/apiRoutes');
 
 // Logging middleware to debug requests
@@ -28,6 +29,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/heritage-sites', heritageRoutes);
+app.use('/api/shops', shopRoutes);
 app.use('/api', apiRoutes);
 app.use('/api', (req, res) => {
   res.status(404).json({ error: 'Not found' });

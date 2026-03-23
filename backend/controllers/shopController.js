@@ -1,99 +1,33 @@
-// Shop Controller - Handles products, orders, and artisan management
-const Product = require('../models/productModel');
-const Order = require('../models/orderModel');
+const Shop = require('../models/shopModel');
 
-exports.getAllProducts = async (req, res) => {
+// Lấy các cửa hàng của nghệ nhân đang đăng nhập
+exports.getMyShops = async (req, res) => {
   try {
-    const products = await Product.findAll();
-    res.json(products);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch products' });
+    const shops = await Shop.findByArtisan(req.user.id);
+    res.json(shops);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch shops' });
   }
 };
 
-exports.getProductById = async (req, res) => {
+// Tạo cửa hàng mới cho nghệ nhân
+exports.createShop = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
-    if (!product) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
-    res.json(product);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch product' });
+    const newShop = await Shop.create(req.user.id, req.body);
+    res.status(201).json(newShop);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to create shop' });
   }
 };
 
-exports.createProduct = async (req, res) => {
+// Cập nhật thông tin cửa hàng
+exports.updateShop = async (req, res) => {
   try {
-    const newProduct = await Product.create(req.body);
-    res.status(201).json(newProduct);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to create product' });
-  }
-};
-
-exports.updateProduct = async (req, res) => {
-  try {
-    const updatedProduct = await Product.update(req.params.id, req.body);
-    if (!updatedProduct) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
-    res.json(updatedProduct);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to update product' });
-  }
-};
-
-exports.deleteProduct = async (req, res) => {
-  try {
-    const deleted = await Product.delete(req.params.id);
-    if (!deleted) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
-    res.json({ message: 'Product deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to delete product' });
-  }
-};
-
-exports.getAllOrders = async (req, res) => {
-  try {
-    const orders = await Order.findAll();
-    res.json(orders);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch orders' });
-  }
-};
-
-exports.getOrderById = async (req, res) => {
-  try {
-    const order = await Order.findById(req.params.id);
-    if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
-    }
-    res.json(order);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch order' });
-  }
-};
-
-exports.createOrder = async (req, res) => {
-  try {
-    const newOrder = await Order.create(req.body);
-    res.status(201).json(newOrder);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to create order' });
-  }
-};
-
-exports.updateOrderStatus = async (req, res) => {
-  try {
-    const updatedOrder = await Order.updateStatus(req.params.id, req.body.status);
-    if (!updatedOrder) {
-      return res.status(404).json({ error: 'Order not found' });
-    }
-    res.json(updatedOrder);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to update order status' });
+    // Thêm logic kiểm tra xem nghệ nhân có sở hữu cửa hàng này không
+    const success = await Shop.update(req.params.id, req.body);
+    if (!success) return res.status(404).json({ error: 'Shop not found or permission denied' });
+    res.json({ message: 'Shop updated' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update shop' });
   }
 };

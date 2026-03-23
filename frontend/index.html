@@ -68,7 +68,10 @@
           </a>
         </div>
         <button type="button" class="hover:text-bronze-gold transition" aria-label="Language">🌐</button>
-        <button type="button" class="hover:text-bronze-gold transition" aria-label="Cart">🛒</button>
+        <a href="#/cart" class="hover:text-bronze-gold transition relative" aria-label="Cart">
+          🛒
+          <span id="cart-count" class="hidden absolute -top-2 -right-2 bg-lacquer-red text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">0</span>
+        </a>
         <div id="auth-header-desktop" class="flex items-center gap-2 min-h-[36px] justify-end"></div>
       </div>
       <div class="flex items-center gap-2 md:hidden shrink-0">
@@ -255,6 +258,10 @@
                     <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Vùng miền âm nhạc</label>
                     <input id="admin-map-region-music" type="text" placeholder="Ví dụ: Quan họ, Ca trù..." class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
                   </div>
+                  <div class="md:col-span-2">
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">URL Hình ảnh</label>
+                    <input id="admin-map-image" type="url" placeholder="https://..." class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
                   <div>
                     <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Vĩ độ (Latitude)</label>
                     <input id="admin-map-lat" type="number" step="any" required class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
@@ -332,6 +339,14 @@
                   <div>
                     <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Danh mục</label>
                     <input id="admin-product-category" type="text" class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">URL Hình ảnh</label>
+                    <input id="admin-product-image" type="url" placeholder="https://..." class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Số lượng (Stock)</label>
+                    <input id="admin-product-stock" type="number" value="0" class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
                   </div>
                   <div class="md:col-span-2 flex gap-3">
                     <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded uppercase tracking-widest text-sm transition-all">Lưu</button>
@@ -736,6 +751,72 @@
         <p id="mp-empty" class="hidden text-center text-gray-500 py-12">Không có sản phẩm phù hợp.</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8" id="mp-grid">
           <!-- Products will be loaded here from database -->
+        </div>
+      </div>
+    </section>
+
+    <!-- PRODUCT DETAIL -->
+    <section class="page-section min-h-screen pt-12 pb-20" data-route="/product" id="page-product-detail">
+      <div class="container mx-auto px-6 max-w-5xl">
+        <a href="#/marketplace" class="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-bronze-gold mb-8 transition-colors">
+          ← Quay lại cửa hàng
+        </a>
+        <div id="product-detail-content" class="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <!-- Loaded via JS -->
+          <div class="animate-pulse bg-white/5 h-[500px] rounded-xl"></div>
+          <div class="space-y-6">
+            <div class="h-4 bg-white/5 w-1/4 rounded"></div>
+            <div class="h-10 bg-white/5 w-3/4 rounded"></div>
+            <div class="h-24 bg-white/5 w-full rounded"></div>
+            <div class="h-12 bg-white/5 w-1/2 rounded"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CART -->
+    <section class="page-section min-h-screen pt-12 pb-20" data-route="/cart" id="page-cart">
+      <div class="container mx-auto px-6 max-w-4xl">
+        <h1 class="font-display text-4xl mb-8 border-b border-white/10 pb-4">Giỏ hàng của bạn</h1>
+        <div id="cart-content" class="space-y-6">
+          <!-- Loaded via JS -->
+          <p class="text-gray-500 text-center py-20">Giỏ hàng trống.</p>
+        </div>
+        <div id="cart-summary" class="hidden mt-12 border-t border-white/10 pt-8 flex flex-col items-end">
+          <div class="text-xl mb-4 flex gap-8">
+            <span class="text-gray-400">Tổng cộng:</span>
+            <span id="cart-total" class="font-bold text-bronze-gold">0 đ</span>
+          </div>
+          <a href="#/checkout" class="px-10 py-4 bg-bronze-gold text-ink-black font-bold uppercase tracking-widest hover:bg-white transition-all shadow-[0_0_20px_rgba(197,160,89,0.3)]">
+            Tiến hành thanh toán
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHECKOUT -->
+    <section class="page-section min-h-screen pt-12 pb-20" data-route="/checkout" id="page-checkout">
+      <div class="container mx-auto px-6 max-w-2xl text-center">
+        <div class="glass-panel p-12 rounded-2xl border border-white/10 shadow-2xl">
+          <div class="w-20 h-20 bg-jade-green/20 rounded-full flex items-center justify-center mx-auto mb-6 text-jade-green text-4xl">
+            ✓
+          </div>
+          <h1 class="font-display text-3xl mb-4">Xác nhận thanh toán</h1>
+          <p class="text-gray-400 mb-8 font-serif italic">Hệ thống đang xử lý giao dịch an toàn của bạn.</p>
+          <div class="bg-black/40 rounded-xl p-6 mb-8 text-left space-y-4">
+            <div class="flex justify-between border-b border-white/5 pb-2">
+              <span class="text-gray-500 text-sm">Phương thức:</span>
+              <span class="text-white text-sm">Demo Payment (Mặc định thành công)</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500 text-sm font-bold">Tổng thanh toán:</span>
+              <span id="checkout-total" class="text-bronze-gold font-bold">0 đ</span>
+            </div>
+          </div>
+          <button id="btn-pay-now" class="w-full py-4 bg-bronze-gold text-ink-black font-bold uppercase tracking-widest hover:bg-white transition-all">
+            Xác nhận & Hoàn tất
+          </button>
+          <p class="mt-4 text-[10px] text-gray-600 uppercase tracking-widest">Giao dịch được mô phỏng cho mục đích demo.</p>
         </div>
       </div>
     </section>

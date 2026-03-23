@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const mysql = require('mysql2/promise');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
@@ -27,7 +28,7 @@ async function seed() {
     await connection.query('SET FOREIGN_KEY_CHECKS = 0');
     
     // Drop existing tables to ensure clean state matching the schema
-    const tables = ['users', 'historical_periods', 'heritage_sites', 'heritage_media', 'products', 'orders', 'posts', 'groups', 'events', 'ai_usage_history', 'comments'];
+    const tables = ['order_details', 'orders', 'products', 'shops', 'users', 'historical_periods', 'heritage_sites', 'heritage_media', 'posts', 'groups', 'events', 'ai_usage_history', 'comments'];
     for (const table of tables) {
       await connection.query(`DROP TABLE IF EXISTS \`${table}\``);
     }
@@ -69,6 +70,7 @@ async function seed() {
         region_music VARCHAR(255),
         description_vi TEXT,
         description_en TEXT,
+        image_url VARCHAR(500),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -84,18 +86,50 @@ async function seed() {
     `);
 
     await connection.query(`
+      CREATE TABLE shops (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        artisan_id INT,
+        shop_name VARCHAR(255),
+        description TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (artisan_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+
+    await connection.query(`
       CREATE TABLE products (
         id INT AUTO_INCREMENT PRIMARY KEY,
+        shop_id INT,
         name VARCHAR(255) NOT NULL,
         description TEXT,
         price DECIMAL(10, 2) NOT NULL,
         category VARCHAR(100),
-        artisan_id INT,
         image_url VARCHAR(500),
-        stock_quantity INT DEFAULT 0,
+        stock INT DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (artisan_id) REFERENCES users(id)
+        FOREIGN KEY (shop_id) REFERENCES shops(id) ON DELETE CASCADE
+      )
+    `);
+
+    await connection.query(`
+      CREATE TABLE orders (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT,
+        status VARCHAR(255) COMMENT 'Pending, Shipping, Completed',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
+
+    await connection.query(`
+      CREATE TABLE order_details (
+        order_id INT,
+        product_id INT,
+        quantity INT,
+        price DECIMAL(10, 2),
+        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+        FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
       )
     `);
 
@@ -119,11 +153,11 @@ async function seed() {
     const artisanId = userResult.insertId + 2;
 
     await connection.query(
-      'INSERT INTO heritage_sites (name, type, latitude, longitude, region_music, description_vi, description_en) VALUES ?',
+      'INSERT INTO heritage_sites (name, type, latitude, longitude, region_music, description_vi, description_en, image_url) VALUES ?',
       [[
-        ['Hoàng Thành Thăng Long', 'Di tích', 21.0369, 105.8342, 'Ca Trù', 'Di sản văn hóa thế giới tại Hà Nội.', 'Imperial Citadel of Thang Long.'],
-        ['Cố đô Huế', 'Di tích', 16.4637, 107.5909, 'Nhã nhạc cung đình', 'Quần thể di tích lịch sử triều Nguyễn.', 'Complex of Hue Monuments.'],
-        ['Thánh địa Mỹ Sơn', 'Di tích', 15.7781, 108.1078, 'Múa Chăm', 'Tổ hợp đền đài Chăm Pa cổ.', 'My Son Sanctuary.']
+        ['Hoàng Thành Thăng Long', 'Di tích', 21.0369, 105.8342, 'Ca Trù', 'Di sản văn hóa thế giới tại Hà Nội.', 'Imperial Citadel of Thang Long.', 'https://picsum.photos/800/600?random=10'],
+        ['Cố đô Huế', 'Di tích', 16.4637, 107.5909, 'Nhã nhạc cung đình', 'Quần thể di tích lịch sử triều Nguyễn.', 'Complex of Hue Monuments.', 'https://picsum.photos/800/600?random=11'],
+        ['Thánh địa Mỹ Sơn', 'Di tích', 15.7781, 108.1078, 'Múa Chăm', 'Tổ hợp đền đài Chăm Pa cổ.', 'My Son Sanctuary.', 'https://picsum.photos/800/600?random=12']
       ]]
     );
 
@@ -140,12 +174,20 @@ async function seed() {
       );
     }
 
-    await connection.query(
-      'INSERT INTO products (name, description, price, category, artisan_id, stock_quantity) VALUES ?',
+    const [shopResult] = await connection.query(
+      'INSERT INTO shops (artisan_id, shop_name, description) VALUES ?',
       [[
-        ['Bình gốm Bát Tràng', 'Bình gốm thủ công họa tiết sen xanh.', 550000, 'Ceramics', artisanId, 20],
-        ['Áo dài lụa Hà Đông', 'Áo dài lụa tơ tằm truyền thống.', 1200000, 'Clothing', artisanId, 10],
-        ['Tranh sơn mài Tùng Hạc', 'Tranh sơn mài nghệ thuật cao cấp.', 3500000, 'Art', artisanId, 5]
+        [artisanId, 'Gốm Sứ Bát Tràng', 'Cửa hàng chuyên các sản phẩm gốm sứ thủ công truyền thống.']
+      ]]
+    );
+    const shopId = shopResult.insertId;
+
+    await connection.query(
+      'INSERT INTO products (shop_id, name, description, price, category, stock, image_url) VALUES ?',
+      [[
+        [shopId, 'Bình gốm Bát Tràng', 'Bình gốm thủ công họa tiết sen xanh.', 550000, 'Ceramics', 20, 'https://picsum.photos/300/400?random=1'],
+        [shopId, 'Áo dài lụa Hà Đông', 'Áo dài lụa tơ tằm truyền thống.', 1200000, 'Clothing', 10, 'https://picsum.photos/300/400?random=2'],
+        [shopId, 'Tranh sơn mài Tùng Hạc', 'Tranh sơn mài nghệ thuật cao cấp.', 3500000, 'Art', 5, 'https://picsum.photos/300/400?random=3']
       ]]
     );
 

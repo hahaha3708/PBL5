@@ -12,19 +12,19 @@ class HeritageSite {
   }
 
   static async create(data) {
-    const { name, type, latitude, longitude, region_music, description_vi, description_en } = data;
+    const { name, type, latitude, longitude, region_music, description_vi, description_en, image_url } = data;
     const [result] = await pool.query(
-      'INSERT INTO heritage_sites (name, type, latitude, longitude, region_music, description_vi, description_en) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [name, type, latitude, longitude, region_music, description_vi, description_en]
+      'INSERT INTO heritage_sites (name, type, latitude, longitude, region_music, description_vi, description_en, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, type, latitude, longitude, region_music, description_vi, description_en, image_url]
     );
     return { id: result.insertId, ...data };
   }
 
   static async update(id, data) {
-    const { name, type, latitude, longitude, region_music, description_vi, description_en } = data;
+    const { name, type, latitude, longitude, region_music, description_vi, description_en, image_url } = data;
     const [result] = await pool.query(
-      'UPDATE heritage_sites SET name = ?, type = ?, latitude = ?, longitude = ?, region_music = ?, description_vi = ?, description_en = ? WHERE id = ?',
-      [name, type, latitude, longitude, region_music, description_vi, description_en, id]
+      'UPDATE heritage_sites SET name = ?, type = ?, latitude = ?, longitude = ?, region_music = ?, description_vi = ?, description_en = ?, image_url = ? WHERE id = ?',
+      [name, type, latitude, longitude, region_music, description_vi, description_en, image_url, id]
     );
     return result.affectedRows > 0;
   }

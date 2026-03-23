@@ -12,19 +12,19 @@ class Product {
   }
 
   static async create(data) {
-    const { name, description, price, category, artisan_id, stock_quantity, image_url } = data;
+    const { name, description, price, category, shop_id, stock, image_url } = data;
     const [result] = await pool.query(
-      'INSERT INTO products (name, description, price, category, artisan_id, stock_quantity, image_url) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [name, description, price, category, artisan_id, stock_quantity, image_url]
+      'INSERT INTO products (name, description, price, category, shop_id, stock, image_url) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [name, description, price, category, shop_id, stock, image_url]
     );
     return { id: result.insertId, ...data };
   }
 
   static async update(id, data) {
-    const { name, description, price, category, stock_quantity, image_url } = data;
+    const { name, description, price, category, stock, image_url } = data;
     const [result] = await pool.query(
-      'UPDATE products SET name = ?, description = ?, price = ?, category = ?, stock_quantity = ?, image_url = ? WHERE id = ?',
-      [name, description, price, category, stock_quantity, image_url, id]
+      'UPDATE products SET name = ?, description = ?, price = ?, category = ?, stock = ?, image_url = ? WHERE id = ?',
+      [name, description, price, category, stock, image_url, id]
     );
     return result.affectedRows > 0;
   }

@@ -4,7 +4,7 @@
 (function () {
   'use strict';
 
-  const ROUTES = ['/', '/history', '/map', '/ai', '/community', '/marketplace', '/auth', '/admin'];
+  const ROUTES = ['/', '/history', '/map', '/ai', '/community', '/marketplace', '/auth', '/admin', '/product', '/cart', '/checkout'];
 
   const dynasticChartData = [
     { name: 'Ngo', start: 938, power: 40 },
@@ -35,6 +35,44 @@
 
   let communityDataLoaded = false; // set true after first successful load
 
+  // --- CART STATE ---
+  let cart = JSON.parse(localStorage.getItem('vh-cart') || '[]');
+
+  function saveCart() {
+    localStorage.setItem('vh-cart', JSON.stringify(cart));
+    updateCartBadge();
+  }
+
+  function updateCartBadge() {
+    const badge = document.getElementById('cart-count');
+    if (!badge) return;
+    const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+    badge.textContent = count;
+    badge.classList.toggle('hidden', count === 0);
+  }
+
+  function addToCart(product, quantity = 1) {
+    if (window.VHAuth && !window.VHAuth.canPurchase()) {
+      alert('Vui lòng đăng nhập Thành viên để mua hàng.');
+      window.location.hash = '#/auth';
+      return;
+    }
+    const existing = cart.find(item => item.id === product.id);
+    if (existing) {
+      existing.quantity += quantity;
+    } else {
+      cart.push({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image_url: product.image_url,
+        quantity: quantity
+      });
+    }
+    saveCart();
+    alert(`Đã thêm ${product.name} vào giỏ hàng!`);
+  }
+
   function getHashPath() {
     let h = window.location.hash.replace(/^#/, '') || '/';
     if (h[0] !== '/') h = '/' + h;
@@ -42,6 +80,7 @@
   }
 
   function normalizeRoute(path) {
+    if (path.startsWith('/product/')) return '/product';
     if (ROUTES.indexOf(path) === -1) return '/';
     return path;
   }
@@ -71,6 +110,16 @@
     }
     if (route === '/admin') {
       setTimeout(initAdminPage, 80);
+    }
+    if (route === '/product') {
+      const id = path.split('/').pop();
+      renderProductDetail(id);
+    }
+    if (route === '/cart') {
+      renderCart();
+    }
+    if (route === '/checkout') {
+      renderCheckout();
     }
     if (route === '/auth' && window.VHAuth) {
       window.VHAuth.updateRoleBanners();
@@ -415,12 +464,13 @@
     sites.forEach(function (site) {
       const m = L.marker([site.lat, site.lng]);
       const popupHtml = `
-        <div style="min-width: 180px;">
+        <div style="min-width: 220px;">
+          ${site.image_url ? `<img src="${site.image_url}" style="width: 100%; height: 120px; object-cover; border-radius: 4px; margin-bottom: 8px;" />` : ''}
           <strong style="color: #c5a059; font-size: 14px;">${escapeHtml(site.name)}</strong>
           <div style="font-size: 11px; color: #888; margin-top: 2px;">
             ${escapeHtml(site.type || '')} · ${escapeHtml(site.region_music || '')}
           </div>
-          <p style="font-size: 12px; margin-top: 6px; line-height: 1.4;">
+          <p style="font-size: 12px; margin-top: 6px; line-height: 1.4; color: #ccc;">
             ${escapeHtml(site.desc_vi || '')}
           </p>
         </div>
@@ -614,19 +664,19 @@
       if (!grid) return;
       grid.innerHTML = products
         .map(p => `
-          <article data-mp-card data-category="${escapeHtml(p.category || '')}" data-title="${escapeHtml(p.name || '')}" class="group relative bg-white/5 rounded-sm overflow-hidden border border-white/5 hover:border-bronze-gold/50 transition-all duration-300">
-            <div class="relative h-[400px] overflow-hidden">
+          <article data-mp-card data-id="${p.id}" class="group relative bg-white/5 rounded-sm overflow-hidden border border-white/5 hover:border-bronze-gold/50 transition-all duration-300">
+            <div class="relative h-[400px] overflow-hidden cursor-pointer" onclick="window.location.hash='#/product/${p.id}'">
               <img src="${p.image_url || `https://picsum.photos/300/400?random=${p.id}`}" alt="${escapeHtml(p.name || '')}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0" />
               <div class="absolute top-4 right-4 bg-black/70 backdrop-blur px-3 py-1 text-bronze-gold text-sm font-bold">${new Intl.NumberFormat('vi-VN').format(Number(p.price) || 0)} đ</div>
               <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition" aria-label="Cart">🛒</button>
+                <button type="button" class="btn-quick-add bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition" aria-label="Cart">🛒</button>
                 <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition" aria-label="Favorite">★</button>
               </div>
             </div>
-            <div class="p-6">
+            <div class="p-6 cursor-pointer" onclick="window.location.hash='#/product/${p.id}'">
               <div class="text-xs text-bronze-gold uppercase tracking-widest mb-1">${escapeHtml(p.category || '')}</div>
               <h3 class="font-display text-xl mb-1">${escapeHtml(p.name || '')}</h3>
-              <p class="text-gray-500 text-sm">${escapeHtml(p.description || '')}</p>
+              <p class="text-gray-500 text-sm line-clamp-2">${escapeHtml(p.description || '')}</p>
             </div>
           </article>
         `).join('');
@@ -636,23 +686,14 @@
       console.log('Marketplace: Fetching products...');
       fetch('/api/products')
         .then(res => {
-          console.log('Marketplace: Response status:', res.status);
-          if (!res.ok) throw new Error('Network response was not ok: ' + res.status);
+          if (!res.ok) throw new Error('Network response was not ok');
           return res.json();
         })
         .then(data => {
-          console.log('Marketplace: Data received:', data);
           if (Array.isArray(data)) {
             allProducts = data;
             applyMp();
-          } else {
-            console.error('API returned non-array data:', data);
           }
-        })
-        .catch(err => {
-          console.error('Marketplace: Fetch error:', err);
-          const grid = document.getElementById('mp-grid');
-          if (grid) grid.innerHTML = `<p class="col-span-full text-center text-red-400">Lỗi kết nối máy chủ (${err.message}). Vui lòng thử lại sau.</p>`;
         });
     }
 
@@ -698,14 +739,15 @@
     const gridEl = document.getElementById('mp-grid');
     if (gridEl) {
       gridEl.addEventListener('click', function (e) {
-        const btn = e.target.closest('button');
-        if (!btn || !btn.closest('[data-mp-card]')) return;
-        if (window.VHAuth && !window.VHAuth.canPurchase()) {
-          e.preventDefault();
-          e.stopPropagation();
-          alert('Theo phân quyền: Khách không mua hàng. Vui lòng đăng nhập Thành viên.');
-          window.location.hash = '#/auth';
-        }
+        const btn = e.target.closest('.btn-quick-add');
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const card = btn.closest('[data-mp-card]');
+        const id = Number(card.getAttribute('data-id'));
+        const product = allProducts.find(p => p.id === id);
+        if (product) addToCart(product);
       });
     }
   }
@@ -898,6 +940,7 @@
           document.getElementById('admin-map-name').value = s.name;
           document.getElementById('admin-map-type').value = s.type;
           document.getElementById('admin-map-region-music').value = s.region_music || '';
+          document.getElementById('admin-map-image').value = s.image_url || '';
           document.getElementById('admin-map-lat').value = s.latitude;
           document.getElementById('admin-map-lng').value = s.longitude;
           document.getElementById('admin-map-desc-vi').value = s.description_vi || '';
@@ -960,7 +1003,9 @@
           document.getElementById('admin-product-id').value = p.id;
           document.getElementById('admin-product-name').value = p.name;
           document.getElementById('admin-product-price').value = p.price;
-          document.getElementById('admin-product-category').value = p.category;
+          document.getElementById('admin-product-category').value = p.category || '';
+          document.getElementById('admin-product-image').value = p.image_url || '';
+          document.getElementById('admin-product-stock').value = p.stock || 0;
           productFormContainer.classList.remove('hidden');
           productFormContainer.scrollIntoView({ behavior: 'smooth' });
         });
@@ -1031,6 +1076,7 @@
         name: document.getElementById('admin-map-name').value,
         type: document.getElementById('admin-map-type').value,
         region_music: document.getElementById('admin-map-region-music').value,
+        image_url: document.getElementById('admin-map-image').value,
         latitude: document.getElementById('admin-map-lat').value,
         longitude: document.getElementById('admin-map-lng').value,
         description_vi: document.getElementById('admin-map-desc-vi').value,
@@ -1066,8 +1112,14 @@
       const data = {
         name: document.getElementById('admin-product-name').value,
         price: document.getElementById('admin-product-price').value,
-        category: document.getElementById('admin-product-category').value
+        category: document.getElementById('admin-product-category').value,
+        image_url: document.getElementById('admin-product-image').value,
+        stock: document.getElementById('admin-product-stock').value
       };
+      
+      // Tạm thời gán shop_id = 1 cho demo nếu tạo mới (sau này sẽ lấy từ API my-shops)
+      if (!id) data.shop_id = 1;
+
       const method = id ? 'PUT' : 'POST';
       const url = id ? `/api/products/${id}` : '/api/products';
       fetch(url, {
@@ -1087,6 +1139,146 @@
     };
   }
 
+  function removeFromCart(id) {
+    cart = cart.filter(item => item.id !== id);
+    saveCart();
+    renderCart();
+  }
+
+  function updateCartQuantity(id, delta) {
+    const item = cart.find(i => i.id === id);
+    if (item) {
+      item.quantity += delta;
+      if (item.quantity <= 0) {
+        removeFromCart(id);
+      } else {
+        saveCart();
+        renderCart();
+      }
+    }
+  }
+
+  function renderProductDetail(id) {
+    const content = document.getElementById('product-detail-content');
+    if (!content) return;
+
+    fetch(`/api/products/${id}`)
+      .then(res => res.json())
+      .then(p => {
+        content.innerHTML = `
+          <div class="relative rounded-xl overflow-hidden bg-white/5 border border-white/10 group">
+            <img src="${p.image_url || `https://picsum.photos/600/800?random=${p.id}`}" alt="${escapeHtml(p.name)}" class="w-full h-full object-cover" />
+          </div>
+          <div class="flex flex-col justify-center">
+            <div class="text-xs text-bronze-gold uppercase tracking-[0.2em] mb-2 font-bold">${escapeHtml(p.category || 'Crafts')}</div>
+            <h1 class="font-display text-5xl mb-4 text-white">${escapeHtml(p.name)}</h1>
+            <div class="text-3xl text-bronze-gold font-bold mb-6">${new Intl.NumberFormat('vi-VN').format(Number(p.price))} đ</div>
+            <p class="text-gray-400 text-lg leading-relaxed mb-8 font-serif italic">
+              ${escapeHtml(p.description || 'Sản phẩm thủ công tinh xảo mang đậm nét văn hóa Việt Nam.')}
+            </p>
+            <div class="flex items-center gap-6 mb-10">
+              <div class="flex items-center border border-white/20 rounded-full px-4 py-2">
+                <button id="qty-minus" class="text-gray-400 hover:text-white px-2">-</button>
+                <input id="qty-input" type="number" value="1" min="1" class="bg-transparent w-12 text-center text-white focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
+                <button id="qty-plus" class="text-gray-400 hover:text-white px-2">+</button>
+              </div>
+              <button id="btn-add-detail" class="flex-1 bg-bronze-gold text-ink-black font-bold uppercase tracking-widest py-4 rounded-full hover:bg-white transition-all shadow-[0_0_30px_rgba(197,160,89,0.2)]">
+                Thêm vào giỏ hàng
+              </button>
+            </div>
+            <div class="grid grid-cols-2 gap-4 border-t border-white/10 pt-8">
+              <div class="flex items-center gap-3 text-xs text-gray-500 uppercase tracking-wider">
+                <span class="text-bronze-gold text-lg">🛡️</span> Bảo hành 12 tháng
+              </div>
+              <div class="flex items-center gap-3 text-xs text-gray-500 uppercase tracking-wider">
+                <span class="text-bronze-gold text-lg">🚚</span> Giao hàng toàn quốc
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Detail events
+        const qIn = document.getElementById('qty-input');
+        const btnMinus = document.getElementById('qty-minus');
+        const btnPlus = document.getElementById('qty-plus');
+        const btnAdd = document.getElementById('btn-add-detail');
+
+        if (btnMinus) btnMinus.onclick = () => { if (qIn.value > 1) qIn.value--; };
+        if (btnPlus) btnPlus.onclick = () => { qIn.value++; };
+        if (btnAdd) btnAdd.onclick = () => {
+          addToCart(p, parseInt(qIn.value));
+        };
+      })
+      .catch(() => {
+        content.innerHTML = '<p class="text-center text-red-400 col-span-2">Không tìm thấy sản phẩm hoặc lỗi kết nối.</p>';
+      });
+  }
+
+  function renderCart() {
+    const container = document.getElementById('cart-content');
+    const summary = document.getElementById('cart-summary');
+    const totalEl = document.getElementById('cart-total');
+    if (!container) return;
+
+    if (cart.length === 0) {
+      container.innerHTML = '<p class="text-gray-500 text-center py-20 font-serif italic text-lg">Giỏ hàng của bạn đang trống. Hãy khám phá những sản phẩm độc đáo!</p>';
+      if (summary) summary.classList.add('hidden');
+      return;
+    }
+
+    if (summary) summary.classList.remove('hidden');
+    let total = 0;
+    container.innerHTML = cart.map(item => {
+      const subtotal = item.price * item.quantity;
+      total += subtotal;
+      return `
+        <div class="flex items-center gap-6 bg-white/5 p-4 rounded-xl border border-white/5 hover:border-white/10 transition-all">
+          <div class="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
+            <img src="${item.image_url || `https://picsum.photos/200/200?random=${item.id}`}" class="w-full h-full object-cover" />
+          </div>
+          <div class="flex-1">
+            <h3 class="font-display text-xl text-white mb-1">${escapeHtml(item.name)}</h3>
+            <div class="text-bronze-gold font-bold">${new Intl.NumberFormat('vi-VN').format(item.price)} đ</div>
+          </div>
+          <div class="flex items-center border border-white/10 rounded-lg px-2 py-1">
+            <button onclick="VHApp.updateCartQuantity(${item.id}, -1)" class="text-gray-500 hover:text-white px-2">-</button>
+            <span class="w-8 text-center text-white font-bold">${item.quantity}</span>
+            <button onclick="VHApp.updateCartQuantity(${item.id}, 1)" class="text-gray-500 hover:text-white px-2">+</button>
+          </div>
+          <div class="w-32 text-right font-bold text-white">
+            ${new Intl.NumberFormat('vi-VN').format(subtotal)} đ
+          </div>
+          <button onclick="VHApp.removeFromCart(${item.id})" class="text-gray-600 hover:text-red-500 transition-colors p-2" title="Xóa">
+            🗑️
+          </button>
+        </div>
+      `;
+    }).join('');
+    if (totalEl) totalEl.textContent = new Intl.NumberFormat('vi-VN').format(total) + ' đ';
+  }
+
+  function renderCheckout() {
+    const totalEl = document.getElementById('checkout-total');
+    const btnPay = document.getElementById('btn-pay-now');
+    if (!totalEl || !btnPay) return;
+
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    totalEl.textContent = new Intl.NumberFormat('vi-VN').format(total) + ' đ';
+
+    btnPay.onclick = () => {
+      btnPay.disabled = true;
+      btnPay.textContent = 'Đang xử lý...';
+      setTimeout(() => {
+        alert('Thanh toán thành công! Cảm ơn bạn đã ủng hộ các nghệ nhân Việt Nam.');
+        cart = [];
+        saveCart();
+        window.location.hash = '#/';
+        btnPay.disabled = false;
+        btnPay.textContent = 'Xác nhận & Hoàn tất';
+      }, 1500);
+    };
+  }
+
   // Exposed objects
   window.VHApp = {
     init: function () {
@@ -1100,7 +1292,10 @@
       initMapControls();
       initNewsletter();
       initMarketplace();
-    }
+      updateCartBadge();
+    },
+    updateCartQuantity,
+    removeFromCart
   };
 
   // Auto-init if DOM ready
