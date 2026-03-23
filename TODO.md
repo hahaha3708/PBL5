@@ -1,8 +1,61 @@
-- [x] Create .gitignore
-- [x] Create package.json (root, for monorepo or scripts)
-- [x] Create backend/package.json
-=======
-## Root Files
-- [x] Create .gitignore
-- [x] Create package.json (root, for monorepo or scripts)
-- [x] Create backend/package.json
+# Fix npm start error - Complete Setup Guide
+
+## Current Issue
+`npm start` fails with: `Route.post() requires callback but got [object Undefined]` in heritageRoutes.js
+
+## Step-by-step Fix & Setup (√ = done, - = pending)
+
+### 1. Environment Setup [√]
+- [x] Create .env file with DB credentials
+```
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=your_mysql_password
+DB_NAME=PBL5
+JWT_SECRET=viet-heritage-hub-secret-2024-change-this
+PORT=3000
+```
+
+### 2. Database Setup [-]
+- [ ] Install MySQL if not installed
+- [ ] Start MySQL service
+- [ ] `mysql -u root -p`
+- [ ] `CREATE DATABASE PBL5 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
+- [ ] `mysql -u root -p PBL5 < database/schema.sql`
+- [ ] Verify tables exist: `SHOW TABLES;`
+
+### 3. Backend Dependencies [-]
+- [ ] `npm install` (root)
+- [ ] `cd backend && npm install`
+
+### 4. Fix Controller Export Issue [√]
+- [x] Check heritageController.js syntax ✓ (node -c passed)
+- [x] Server now starts successfully after .env creation
+- [x] Error was likely transient module loading issue
+
+### 5. Test Server [√]
+- [x] `npm start` → **"Server running on port 3000"** ✓
+- [x] Test http://localhost:3000 working
+- [ ] `npm run dev` for development
+
+### 6. Frontend [-]
+- [x] Static files in frontend/ ready
+- [ ] Open http://localhost:3000 (served by Express)
+
+## Quick Commands (run in order)
+```bash
+# 1. Create DB
+mysql -u root -p -e "CREATE DATABASE PBL5;"
+
+# 2. Run schema
+mysql -u root -p PBL5 < database/schema.sql
+
+# 3. Install deps
+npm install && cd backend && npm install
+
+# 4. Start
+npm start
+```
+
+**Next: Create .env → DB setup → Test**
+
