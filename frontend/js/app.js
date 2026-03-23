@@ -1400,6 +1400,62 @@
     };
   }
 
+  function initChat() {
+    const toggle = document.getElementById('chat-toggle');
+    const windowEl = document.getElementById('chat-window');
+    const close = document.getElementById('close-chat');
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('chat-input');
+    const messages = document.getElementById('chat-messages');
+
+    if (!toggle || !windowEl) return;
+
+    toggle.onclick = () => {
+      windowEl.classList.toggle('hidden');
+      if (!windowEl.classList.contains('hidden')) {
+        input.focus();
+        messages.scrollTop = messages.scrollHeight;
+      }
+    };
+
+    if (close) close.onclick = () => windowEl.classList.add('hidden');
+
+    if (form) {
+      form.onsubmit = (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+
+        // User message
+        const userMsg = document.createElement('div');
+        userMsg.className = 'flex flex-col items-end';
+        userMsg.innerHTML = `
+          <div class="bg-bronze-gold text-black p-3 rounded-2xl rounded-tr-none max-w-[80%] text-sm leading-relaxed">
+            ${escapeHtml(text)}
+          </div>
+          <span class="text-[9px] text-gray-600 mt-1 mr-1 uppercase tracking-widest">Bạn • Vừa xong</span>
+        `;
+        messages.appendChild(userMsg);
+        input.value = '';
+        messages.scrollTop = messages.scrollHeight;
+
+        // Mock Admin Reply
+        setTimeout(() => {
+          const adminMsg = document.createElement('div');
+          adminMsg.className = 'flex flex-col items-start animate-fade-in-up';
+          adminMsg.innerHTML = `
+            <div class="bg-white/5 border border-white/10 text-gray-300 p-3 rounded-2xl rounded-tl-none max-w-[80%] text-sm leading-relaxed">
+              Cảm ơn bạn đã nhắn tin. Admin đã nhận được thông tin và sẽ phản hồi sớm nhất có thể!
+            </div>
+            <span class="text-[9px] text-gray-600 mt-1 ml-1 uppercase tracking-widest">Admin • Vừa xong</span>
+          `;
+          messages.appendChild(adminMsg);
+          messages.scrollTop = messages.scrollHeight;
+        }, 1000);
+      };
+    }
+  }
+
   // Exposed objects
   window.VHApp = {
     init: function () {
@@ -1413,6 +1469,7 @@
       initMapControls();
       initNewsletter();
       initMarketplace();
+      initChat();
       updateCartBadge();
     },
     updateCartQuantity,
