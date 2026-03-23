@@ -2,6 +2,11 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
+const { requireAuth, requireRoles } = require('../middleware/auth');
+
+// Protect all user management routes - only admins can access
+router.use(requireAuth);
+router.use(requireRoles('admin'));
 
 // GET /api/users - Get all users
 router.get('/', userController.getAllUsers);

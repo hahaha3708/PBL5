@@ -1,8 +1,8 @@
 -- Viet Heritage Hub Database Schema
 
 -- Create database
-CREATE DATABASE IF NOT EXISTS viet_heritage_hub;
-USE viet_heritage_hub;
+CREATE DATABASE IF NOT EXISTS PBL5;
+USE PBL5;
 
 -- Users table
 CREATE TABLE users (

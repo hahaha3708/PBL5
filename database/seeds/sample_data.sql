@@ -1,5 +1,5 @@
 -- Sample Data for Viet Heritage Hub Database
-USE viet_heritage_hub;
+USE PBL5;
 
 -- Insert sample users
 INSERT INTO users (name, email, password, role) VALUES

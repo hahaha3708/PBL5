@@ -4,7 +4,7 @@
 (function () {
   'use strict';
 
-  const ROUTES = ['/', '/history', '/map', '/ai', '/community', '/marketplace'];
+  const ROUTES = ['/', '/history', '/map', '/ai', '/community', '/marketplace', '/auth', '/admin'];
 
   const dynasticChartData = [
     { name: 'Ngo', start: 938, power: 40 },
@@ -68,6 +68,12 @@
     }
     if (route === '/community') {
       setTimeout(initCommunityPage, 80);
+    }
+    if (route === '/admin') {
+      setTimeout(initAdminPage, 80);
+    }
+    if (route === '/auth' && window.VHAuth) {
+      window.VHAuth.updateRoleBanners();
     }
   }
 
@@ -590,18 +596,348 @@
         applyMp();
       });
     }
+
+    var grid = document.getElementById('mp-grid');
+    if (grid) {
+      grid.addEventListener('click', function (e) {
+        var btn = e.target.closest('button');
+        if (!btn || !btn.closest('[data-mp-card]')) return;
+        if (window.VHAuth && !window.VHAuth.canPurchase()) {
+          e.preventDefault();
+          e.stopPropagation();
+          alert('Theo phân quyền: Khách không mua hàng. Vui lòng đăng nhập Thành viên.');
+          window.location.hash = '#/auth';
+        }
+      });
+    }
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
-    initRouter();
-    initHeaderScroll();
-    initMobileMenu();
-    initHomeParallax();
-    initDynastyButtons();
-    initAIStudio();
-    initHomeStats();
-    initMapControls();
-    initNewsletter();
-    initMarketplace();
-  });
+  function initAdminPage() {
+    if (!window.VHAuth || !window.VHAuth.isAdmin()) {
+      window.location.hash = '#/auth';
+      return;
+    }
+
+    const userList = document.getElementById('admin-user-list');
+    const userFormContainer = document.getElementById('admin-user-form-container');
+    const userForm = document.getElementById('admin-user-form');
+    const addUserBtn = document.getElementById('admin-add-user-btn');
+    const cancelBtn = document.getElementById('admin-user-cancel');
+
+    // Tab switching logic
+    const tabBtns = document.querySelectorAll('.admin-tab-btn');
+    const adminViews = document.querySelectorAll('.admin-view');
+
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetTab = btn.getAttribute('data-admin-tab');
+        
+        // Update button styles
+        tabBtns.forEach(b => {
+          b.classList.remove('active', 'border-red-500/50', 'bg-red-500/10', 'text-white', 'font-bold');
+          b.classList.add('border-transparent', 'text-gray-400');
+        });
+        btn.classList.add('active', 'border-red-500/50', 'bg-red-500/10', 'text-white', 'font-bold');
+        btn.classList.remove('border-transparent', 'text-gray-400');
+
+        // Show/hide views
+        adminViews.forEach(view => {
+          view.classList.toggle('hidden', view.id !== `admin-view-${targetTab}`);
+        });
+
+        // Specific load functions
+        if (targetTab === 'users') loadUsers();
+        if (targetTab === 'history') loadHistory();
+        if (targetTab === 'map') loadMapPoints();
+        if (targetTab === 'community') loadCommunityPosts();
+        if (targetTab === 'marketplace') loadMarketplaceProducts();
+      });
+    });
+
+    // --- USERS MANAGEMENT ---
+    function loadUsers() {
+      fetch('/api/users', { headers: window.VHAuth.authHeaders() })
+        .then(res => res.json())
+        .then(users => {
+          if (users.error) throw new Error(users.error);
+          renderUsers(users);
+        })
+        .catch(err => {
+          console.error('Failed to load users:', err);
+          if (userList) userList.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-red-400">Không tải được danh sách.</td></tr>';
+        });
+    }
+
+    function renderUsers(users) {
+      if (!userList) return;
+      userList.innerHTML = users.map(user => `
+        <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+          <td class="py-4 px-2 text-gray-500">${user.id}</td>
+          <td class="py-4 px-2 font-bold">${user.name}</td>
+          <td class="py-4 px-2 text-gray-400">${user.email}</td>
+          <td class="py-4 px-2">
+            <span class="px-2 py-0.5 rounded-full border border-white/20 text-[10px] uppercase tracking-wider ${user.role === 'admin' ? 'text-red-400 border-red-400/30 bg-red-400/5' : ''}">
+              ${user.role}
+            </span>
+          </td>
+          <td class="py-4 px-2 text-right">
+            <button onclick="window._adminEditUser(${user.id})" class="text-bronze-gold hover:text-white transition-colors mr-3">Sửa</button>
+            <button onclick="window._adminDeleteUser(${user.id})" class="text-red-500 hover:text-white transition-colors">Xóa</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // --- HISTORY MANAGEMENT ---
+    function loadHistory() {
+      const list = document.getElementById('admin-history-list');
+      if (!list) return;
+      list.innerHTML = '<tr><td colspan="3" class="py-4 text-center">Đang tải...</td></tr>';
+      
+      fetch('/api/history') // Assuming this exists or using stats stub
+        .then(res => res.json())
+        .then(data => {
+          // Render data if available, else show empty
+          list.innerHTML = '<tr><td colspan="3" class="py-4 text-center text-gray-500">Chưa có dữ liệu lịch sử.</td></tr>';
+        })
+        .catch(() => {
+          list.innerHTML = '<tr><td colspan="3" class="py-4 text-center text-red-400">Lỗi tải dữ liệu.</td></tr>';
+        });
+    }
+
+    // --- MAP MANAGEMENT ---
+    function loadMapPoints() {
+      const list = document.getElementById('admin-map-list');
+      if (!list) return;
+      list.innerHTML = '<tr><td colspan="3" class="py-4 text-center">Đang tải...</td></tr>';
+      
+      fetch('/api/sites')
+        .then(res => res.json())
+        .then(sites => {
+          list.innerHTML = sites.map(s => `
+            <tr class="border-b border-white/5">
+              <td class="py-4 px-2">${s.name}</td>
+              <td class="py-4 px-2 text-gray-400">${s.region}</td>
+              <td class="py-4 px-2 text-right">
+                <button class="text-bronze-gold hover:text-white transition-colors mr-3">Sửa</button>
+                <button class="text-red-500 hover:text-white transition-colors">Xóa</button>
+              </td>
+            </tr>
+          `).join('');
+        })
+        .catch(() => {
+          list.innerHTML = '<tr><td colspan="3" class="py-4 text-center text-red-400">Lỗi tải dữ liệu.</td></tr>';
+        });
+    }
+
+    // --- COMMUNITY MANAGEMENT ---
+    function loadCommunityPosts() {
+      const list = document.getElementById('admin-community-list');
+      if (!list) return;
+      list.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-gray-500">Chưa có bài đăng nào cần duyệt.</td></tr>';
+    }
+
+    // --- MARKETPLACE MANAGEMENT ---
+    function loadMarketplaceProducts() {
+      const list = document.getElementById('admin-product-list');
+      if (!list) return;
+      list.innerHTML = '<tr><td colspan="4" class="py-4 text-center">Đang tải...</td></tr>';
+      
+      // Using marketplace grid items as reference for demo
+      const mockProducts = [
+        { name: 'Bình gốm Bát Tràng', price: '550.000', category: 'Ceramics' },
+        { name: 'Áo dài lụa Hà Đông', price: '1.200.000', category: 'Clothing' }
+      ];
+      
+      list.innerHTML = mockProducts.map(p => `
+        <tr class="border-b border-white/5">
+          <td class="py-4 px-2 font-bold">${p.name}</td>
+          <td class="py-4 px-2 text-bronze-gold">${p.price} đ</td>
+          <td class="py-4 px-2 text-gray-400">${p.category}</td>
+          <td class="py-4 px-2 text-right">
+            <button class="text-bronze-gold hover:text-white transition-colors mr-3">Sửa</button>
+            <button class="text-red-500 hover:text-white transition-colors">Xóa</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function loadUsers() {
+      fetch('/api/users', {
+        headers: window.VHAuth.authHeaders()
+      })
+      .then(res => res.json())
+      .then(users => {
+        if (users.error) throw new Error(users.error);
+        renderUsers(users);
+      })
+      .catch(err => {
+        console.error('Failed to load users:', err);
+        if (userList) userList.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-red-400">Không tải được danh sách người dùng.</td></tr>';
+      });
+    }
+
+    function renderUsers(users) {
+      if (!userList) return;
+      userList.innerHTML = users.map(user => `
+        <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+          <td class="py-4 px-2 text-gray-500">${user.id}</td>
+          <td class="py-4 px-2 font-bold">${user.name}</td>
+          <td class="py-4 px-2 text-gray-400">${user.email}</td>
+          <td class="py-4 px-2">
+            <span class="px-2 py-0.5 rounded-full border border-white/20 text-[10px] uppercase tracking-wider ${user.role === 'admin' ? 'text-red-400 border-red-400/30 bg-red-400/5' : ''}">
+              ${user.role}
+            </span>
+          </td>
+          <td class="py-4 px-2 flex gap-2">
+            <button onclick="window._adminEditUser(${user.id})" class="text-bronze-gold hover:text-white transition-colors">Sửa</button>
+            <button onclick="window._adminDeleteUser(${user.id})" class="text-red-500 hover:text-white transition-colors">Xóa</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    window._adminEditUser = function(id) {
+      fetch(`/api/users/${id}`, {
+        headers: window.VHAuth.authHeaders()
+      })
+      .then(res => res.json())
+      .then(user => {
+        document.getElementById('admin-user-id').value = user.id;
+        document.getElementById('admin-user-name').value = user.name;
+        document.getElementById('admin-user-email').value = user.email;
+        document.getElementById('admin-user-role').value = user.role;
+        document.getElementById('admin-user-password').value = '';
+        userFormContainer.classList.remove('hidden');
+        userFormContainer.scrollIntoView({ behavior: 'smooth' });
+      });
+    };
+
+    window._adminDeleteUser = function(id) {
+      if (!confirm('Bạn có chắc muốn xóa người dùng này?')) return;
+      fetch(`/api/users/${id}`, {
+        method: 'DELETE',
+        headers: window.VHAuth.authHeaders()
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) alert(data.error);
+        else loadUsers();
+      })
+      .catch(err => alert('Lỗi: ' + err.message));
+    };
+
+    if (addUserBtn) {
+      addUserBtn.onclick = () => {
+        userForm.reset();
+        document.getElementById('admin-user-id').value = '';
+        userFormContainer.classList.toggle('hidden');
+      };
+    }
+
+    // Add buttons for other modules
+    const addHistoryBtn = document.getElementById('admin-add-history-btn');
+    const historyFormContainer = document.getElementById('admin-history-form-container');
+    if (addHistoryBtn) {
+      addHistoryBtn.onclick = () => {
+        document.getElementById('admin-history-form').reset();
+        document.getElementById('admin-history-id').value = '';
+        historyFormContainer.classList.toggle('hidden');
+      };
+    }
+
+    const addMapBtn = document.getElementById('admin-add-map-btn');
+    const mapFormContainer = document.getElementById('admin-map-form-container');
+    if (addMapBtn) {
+      addMapBtn.onclick = () => {
+        document.getElementById('admin-map-form').reset();
+        document.getElementById('admin-map-id').value = '';
+        mapFormContainer.classList.toggle('hidden');
+      };
+    }
+
+    const addProductBtn = document.getElementById('admin-add-product-btn');
+    const productFormContainer = document.getElementById('admin-product-form-container');
+    if (addProductBtn) {
+      addProductBtn.onclick = () => {
+        document.getElementById('admin-product-form').reset();
+        document.getElementById('admin-product-id').value = '';
+        productFormContainer.classList.toggle('hidden');
+      };
+    }
+
+    if (cancelBtn) {
+      cancelBtn.onclick = () => userFormContainer.classList.add('hidden');
+    }
+
+    // Cancel buttons for other modules
+    const cancelHistoryBtn = document.getElementById('admin-history-cancel');
+    if (cancelHistoryBtn) cancelHistoryBtn.onclick = () => historyFormContainer.classList.add('hidden');
+
+    const cancelMapBtn = document.getElementById('admin-map-cancel');
+    if (cancelMapBtn) cancelMapBtn.onclick = () => mapFormContainer.classList.add('hidden');
+
+    const cancelProductBtn = document.getElementById('admin-product-cancel');
+    if (cancelProductBtn) cancelProductBtn.onclick = () => productFormContainer.classList.add('hidden');
+
+    if (userForm) {
+      userForm.onsubmit = (e) => {
+        e.preventDefault();
+        const id = document.getElementById('admin-user-id').value;
+        const userData = {
+          name: document.getElementById('admin-user-name').value,
+          email: document.getElementById('admin-user-email').value,
+          role: document.getElementById('admin-user-role').value
+        };
+        const password = document.getElementById('admin-user-password').value;
+        if (password) userData.password = password;
+
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `/api/users/${id}` : '/api/users';
+
+        fetch(url, {
+          method,
+          headers: {
+            ...window.VHAuth.authHeaders(),
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(userData)
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) alert(data.error);
+          else {
+            userFormContainer.classList.add('hidden');
+            loadUsers();
+          }
+        })
+        .catch(err => alert('Lỗi: ' + err.message));
+      };
+    }
+
+    loadUsers();
+  }
+
+  // Exposed objects
+  window.VHApp = {
+    init: function () {
+      initRouter();
+      initHeaderScroll();
+      initMobileMenu();
+      initHomeParallax();
+      initDynastyButtons();
+      initAIStudio();
+      initHomeStats();
+      initMapControls();
+      initNewsletter();
+      initMarketplace();
+    }
+  };
+
+  // Auto-init if DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', window.VHApp.init);
+  } else {
+    window.VHApp.init();
+  }
 })();

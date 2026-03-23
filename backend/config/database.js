@@ -4,20 +4,13 @@ const mysql = require('mysql2/promise');
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'viet_heritage_hub',
+  password: process.env.DB_PASSWORD || '123456789',
+  database: process.env.DB_NAME || 'PBL5',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
 };
 
-let pool;
+const pool = mysql.createPool(dbConfig);
 
-async function getConnection() {
-  if (!pool) {
-    pool = mysql.createPool(dbConfig);
-  }
-  return pool;
-}
-
-module.exports = getConnection();
+module.exports = pool;

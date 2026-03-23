@@ -12,9 +12,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
+const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const apiRoutes = require('./routes/apiRoutes');
 
+// Logging middleware to debug requests
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
+
+app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api', apiRoutes);
 app.use('/api', (req, res) => {

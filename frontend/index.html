@@ -56,13 +56,25 @@
         <a href="#/ai" data-nav-route="/ai" class="nav-link text-sm uppercase tracking-widest transition-colors relative group text-gray-300 hover:text-bronze-gold">AI Studio<span class="underline-anim absolute -bottom-1 left-0 h-[1px] bg-bronze-gold transition-all duration-300 w-0 group-hover:w-full"></span></a>
         <a href="#/community" data-nav-route="/community" class="nav-link text-sm uppercase tracking-widest transition-colors relative group text-gray-300 hover:text-bronze-gold">Community<span class="underline-anim absolute -bottom-1 left-0 h-[1px] bg-bronze-gold transition-all duration-300 w-0 group-hover:w-full"></span></a>
         <a href="#/marketplace" data-nav-route="/marketplace" class="nav-link text-sm uppercase tracking-widest transition-colors relative group text-gray-300 hover:text-bronze-gold">Marketplace<span class="underline-anim absolute -bottom-1 left-0 h-[1px] bg-bronze-gold transition-all duration-300 w-0 group-hover:w-full"></span></a>
+        <a href="#/admin" id="nav-admin" data-nav-route="/admin" class="nav-link hidden text-sm uppercase tracking-widest transition-colors relative group text-red-400 hover:text-red-300">Admin<span class="underline-anim absolute -bottom-1 left-0 h-[1px] bg-red-400 transition-all duration-300 w-0 group-hover:w-full"></span></a>
       </nav>
-      <div class="hidden md:flex items-center gap-4">
+      <div class="hidden md:flex items-center gap-4 shrink-0">
+        <div id="guest-actions" class="flex items-center gap-4">
+          <a href="#/auth" class="border border-white/20 px-4 py-1.5 rounded-full text-xs uppercase tracking-wider hover:bg-bronze-gold hover:text-black hover:border-bronze-gold transition-all flex items-center gap-2">
+            Đăng nhập
+          </a>
+          <a href="#/auth" class="bg-bronze-gold text-black px-4 py-1.5 rounded-full text-xs uppercase tracking-wider hover:bg-transparent hover:text-bronze-gold border border-bronze-gold transition-all flex items-center gap-2">
+            Đăng ký
+          </a>
+        </div>
         <button type="button" class="hover:text-bronze-gold transition" aria-label="Language">🌐</button>
         <button type="button" class="hover:text-bronze-gold transition" aria-label="Cart">🛒</button>
-        <button type="button" class="border border-white/20 px-4 py-1.5 rounded-full text-xs uppercase tracking-wider hover:bg-bronze-gold hover:text-black transition-all">👤 Connect</button>
+        <div id="auth-header-desktop" class="flex items-center gap-2 min-h-[36px] justify-end"></div>
       </div>
-      <button type="button" id="mobile-menu-btn" class="md:hidden text-2xl" aria-label="Menu">☰</button>
+      <div class="flex items-center gap-2 md:hidden shrink-0">
+        <div id="auth-corner-mobile" class="flex items-center justify-end min-w-0"></div>
+        <button type="button" id="mobile-menu-btn" class="text-2xl p-1" aria-label="Menu">☰</button>
+      </div>
     </div>
     <div id="mobile-menu" class="hidden md:hidden absolute top-full left-0 w-full bg-ink-black/95 backdrop-blur-xl border-b border-white/10 p-6 flex flex-col gap-4">
       <a href="#/" class="text-lg font-display uppercase tracking-widest text-center py-2 border-b border-white/5">Home</a>
@@ -71,10 +83,334 @@
       <a href="#/ai" class="text-lg font-display uppercase tracking-widest text-center py-2 border-b border-white/5">AI Studio</a>
       <a href="#/community" class="text-lg font-display uppercase tracking-widest text-center py-2 border-b border-white/5">Community</a>
       <a href="#/marketplace" class="text-lg font-display uppercase tracking-widest text-center py-2 border-b border-white/5">Marketplace</a>
+      <a href="#/auth" class="mx-auto inline-flex items-center justify-center rounded-full border-2 border-bronze-gold/80 bg-bronze-gold/10 px-8 py-2.5 text-sm font-display uppercase tracking-widest text-bronze-gold shadow-[0_0_14px_rgba(197,160,89,0.15)] hover:bg-bronze-gold hover:text-ink-black transition-all duration-300">Đăng nhập</a>
+      <div id="auth-header-mobile" class="pt-2 border-t border-white/10 flex flex-col items-center gap-2"></div>
     </div>
   </header>
 
   <main class="flex-grow pt-20">
+    <!-- ADMIN -->
+    <section class="page-section min-h-screen pb-20 bg-black/50" data-route="/admin" id="page-admin">
+      <div class="container mx-auto px-6 pt-12">
+        <header class="mb-12">
+          <h1 class="font-display text-4xl text-red-500 mb-2">Admin Dashboard</h1>
+          <p class="text-gray-400">Quản lý hệ thống và nội dung di sản.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <!-- Admin Sidebar -->
+          <div class="lg:col-span-3">
+            <div class="glass-panel p-4 rounded-xl border border-white/10 sticky top-24">
+              <nav class="flex flex-col gap-2">
+                <button type="button" data-admin-tab="users" class="admin-tab-btn active w-full text-left px-4 py-3 rounded-lg transition-all border border-red-500/50 bg-red-500/10 text-white font-bold">
+                  👥 Quản lý tài khoản
+                </button>
+                <button type="button" data-admin-tab="history" class="admin-tab-btn w-full text-left px-4 py-3 rounded-lg transition-all border border-transparent text-gray-400 hover:bg-white/5 hover:text-gray-200">
+                  📜 Chỉnh sửa History
+                </button>
+                <button type="button" data-admin-tab="map" class="admin-tab-btn w-full text-left px-4 py-3 rounded-lg transition-all border border-transparent text-gray-400 hover:bg-white/5 hover:text-gray-200">
+                  📍 Thêm điểm cho Map
+                </button>
+                <button type="button" data-admin-tab="community" class="admin-tab-btn w-full text-left px-4 py-3 rounded-lg transition-all border border-transparent text-gray-400 hover:bg-white/5 hover:text-gray-200">
+                  💬 Kiểm soát Cộng đồng
+                </button>
+                <button type="button" data-admin-tab="marketplace" class="admin-tab-btn w-full text-left px-4 py-3 rounded-lg transition-all border border-transparent text-gray-400 hover:bg-white/5 hover:text-gray-200">
+                  🛒 Kiểm soát Mặt hàng
+                </button>
+              </nav>
+            </div>
+          </div>
+
+          <!-- Admin Content Area -->
+          <div class="lg:col-span-9 space-y-8">
+            <!-- USERS TAB -->
+            <div id="admin-view-users" class="admin-view glass-panel p-8 rounded-xl border border-white/10 shadow-2xl">
+              <div class="flex justify-between items-center mb-6">
+                <h2 class="font-display text-2xl text-white">Quản lý người dùng</h2>
+                <button type="button" id="admin-add-user-btn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm uppercase tracking-wider transition-all">
+                  + Thêm người dùng
+                </button>
+              </div>
+
+              <div id="admin-user-form-container" class="hidden mb-8 p-6 bg-white/5 rounded-lg border border-white/10">
+                <h3 class="text-lg text-bronze-gold mb-4 uppercase tracking-widest">Thêm / Sửa người dùng</h3>
+                <form id="admin-user-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input type="hidden" id="admin-user-id" />
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Họ tên</label>
+                    <input id="admin-user-name" type="text" required class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Email</label>
+                    <input id="admin-user-email" type="email" required class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Mật khẩu</label>
+                    <input id="admin-user-password" type="password" class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" placeholder="Bỏ trống nếu không đổi" />
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Vai trò</label>
+                    <select id="admin-user-role" class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none">
+                      <option value="member">Thành viên</option>
+                      <option value="artisan">Nghệ nhân</option>
+                      <option value="admin">Quản trị viên</option>
+                    </select>
+                  </div>
+                  <div class="md:col-span-2 flex gap-3">
+                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded uppercase tracking-widest text-sm transition-all">Lưu</button>
+                    <button type="button" id="admin-user-cancel" class="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded uppercase tracking-widest text-sm transition-all">Hủy</button>
+                  </div>
+                </form>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full border-collapse text-left">
+                  <thead>
+                    <tr class="text-gray-400 border-b border-white/10 uppercase tracking-widest text-xs">
+                      <th class="py-4 px-2">ID</th>
+                      <th class="py-4 px-2">Họ tên</th>
+                      <th class="py-4 px-2">Email</th>
+                      <th class="py-4 px-2">Vai trò</th>
+                      <th class="py-4 px-2 text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-user-list" class="text-sm">
+                    <!-- Loaded via JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- HISTORY TAB -->
+            <div id="admin-view-history" class="admin-view hidden glass-panel p-8 rounded-xl border border-white/10 shadow-2xl">
+              <div class="flex justify-between items-center mb-6">
+                <h2 class="font-display text-2xl text-white">Chỉnh sửa History</h2>
+                <button type="button" id="admin-add-history-btn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm uppercase tracking-wider transition-all">
+                  + Thêm triều đại
+                </button>
+              </div>
+              <div id="admin-history-form-container" class="hidden mb-8 p-6 bg-white/5 rounded-lg border border-white/10">
+                <form id="admin-history-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input type="hidden" id="admin-history-id" />
+                  <div class="md:col-span-2">
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Tên triều đại</label>
+                    <input id="admin-history-dynasty" type="text" required class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Năm bắt đầu</label>
+                    <input id="admin-history-start" type="number" required class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Năm kết thúc</label>
+                    <input id="admin-history-end" type="number" required class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Mô tả</label>
+                    <textarea id="admin-history-desc" rows="3" class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none"></textarea>
+                  </div>
+                  <div class="md:col-span-2 flex gap-3">
+                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded uppercase tracking-widest text-sm transition-all">Lưu</button>
+                    <button type="button" id="admin-history-cancel" class="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded uppercase tracking-widest text-sm transition-all">Hủy</button>
+                  </div>
+                </form>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full border-collapse text-left">
+                  <thead>
+                    <tr class="text-gray-400 border-b border-white/10 uppercase tracking-widest text-xs">
+                      <th class="py-4 px-2">Triều đại</th>
+                      <th class="py-4 px-2">Giai đoạn</th>
+                      <th class="py-4 px-2 text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-history-list" class="text-sm"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- MAP TAB -->
+            <div id="admin-view-map" class="admin-view hidden glass-panel p-8 rounded-xl border border-white/10 shadow-2xl">
+              <div class="flex justify-between items-center mb-6">
+                <h2 class="font-display text-2xl text-white">Thêm điểm di sản</h2>
+                <button type="button" id="admin-add-map-btn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm uppercase tracking-wider transition-all">
+                  + Thêm điểm mới
+                </button>
+              </div>
+              <div id="admin-map-form-container" class="hidden mb-8 p-6 bg-white/5 rounded-lg border border-white/10">
+                <form id="admin-map-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input type="hidden" id="admin-map-id" />
+                  <div class="md:col-span-2">
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Tên di sản</label>
+                    <input id="admin-map-name" type="text" required class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Vĩ độ (Lat)</label>
+                    <input id="admin-map-lat" type="number" step="any" required class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Kinh độ (Lng)</label>
+                    <input id="admin-map-lng" type="number" step="any" required class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Vùng miền</label>
+                    <select id="admin-map-region" class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none">
+                      <option value="North">Miền Bắc</option>
+                      <option value="Central">Miền Trung</option>
+                      <option value="South">Miền Nam</option>
+                    </select>
+                  </div>
+                  <div class="md:col-span-2 flex gap-3">
+                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded uppercase tracking-widest text-sm transition-all">Lưu</button>
+                    <button type="button" id="admin-map-cancel" class="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded uppercase tracking-widest text-sm transition-all">Hủy</button>
+                  </div>
+                </form>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full border-collapse text-left">
+                  <thead>
+                    <tr class="text-gray-400 border-b border-white/10 uppercase tracking-widest text-xs">
+                      <th class="py-4 px-2">Tên di sản</th>
+                      <th class="py-4 px-2">Vùng</th>
+                      <th class="py-4 px-2 text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-map-list" class="text-sm"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- COMMUNITY TAB -->
+            <div id="admin-view-community" class="admin-view hidden glass-panel p-8 rounded-xl border border-white/10 shadow-2xl">
+              <h2 class="font-display text-2xl text-white mb-6">Kiểm soát bài đăng</h2>
+              <div class="overflow-x-auto">
+                <table class="w-full border-collapse text-left">
+                  <thead>
+                    <tr class="text-gray-400 border-b border-white/10 uppercase tracking-widest text-xs">
+                      <th class="py-4 px-2">Tiêu đề</th>
+                      <th class="py-4 px-2">Người đăng</th>
+                      <th class="py-4 px-2">Trạng thái</th>
+                      <th class="py-4 px-2 text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-community-list" class="text-sm"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- MARKETPLACE TAB -->
+            <div id="admin-view-marketplace" class="admin-view hidden glass-panel p-8 rounded-xl border border-white/10 shadow-2xl">
+              <div class="flex justify-between items-center mb-6">
+                <h2 class="font-display text-2xl text-white">Kiểm soát mặt hàng</h2>
+                <button type="button" id="admin-add-product-btn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm uppercase tracking-wider transition-all">
+                  + Thêm mặt hàng
+                </button>
+              </div>
+              <div id="admin-product-form-container" class="hidden mb-8 p-6 bg-white/5 rounded-lg border border-white/10">
+                <form id="admin-product-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input type="hidden" id="admin-product-id" />
+                  <div class="md:col-span-2">
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Tên sản phẩm</label>
+                    <input id="admin-product-name" type="text" required class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Giá (VNĐ)</label>
+                    <input id="admin-product-price" type="number" required class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Danh mục</label>
+                    <input id="admin-product-category" type="text" class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
+                  <div class="md:col-span-2 flex gap-3">
+                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded uppercase tracking-widest text-sm transition-all">Lưu</button>
+                    <button type="button" id="admin-product-cancel" class="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded uppercase tracking-widest text-sm transition-all">Hủy</button>
+                  </div>
+                </form>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full border-collapse text-left">
+                  <thead>
+                    <tr class="text-gray-400 border-b border-white/10 uppercase tracking-widest text-xs">
+                      <th class="py-4 px-2">Sản phẩm</th>
+                      <th class="py-4 px-2">Giá</th>
+                      <th class="py-4 px-2">Danh mục</th>
+                      <th class="py-4 px-2 text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-product-list" class="text-sm"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AUTH -->
+    <section class="page-section min-h-screen" data-route="/auth" id="page-auth">
+      <div class="min-h-[calc(100vh-5rem)] flex items-center justify-center px-4 py-10">
+        <div class="w-full max-w-lg glass-panel rounded-2xl border border-white/10 p-8 shadow-2xl">
+          <p class="text-center text-bronze-gold uppercase tracking-[0.35em] text-xs mb-2">Tài khoản</p>
+          <h1 class="font-display text-3xl text-center text-white mb-6">Đăng nhập &amp; Đăng ký</h1>
+          <div class="flex p-1 rounded-full bg-black/45 border border-white/10 gap-1 mb-6 shadow-inner">
+            <button type="button" id="auth-tab-login" class="flex-1 rounded-full py-2.5 text-sm uppercase tracking-widest transition-all duration-300 border border-bronze-gold/50 bg-bronze-gold/15 text-bronze-gold shadow-[0_0_14px_rgba(197,160,89,0.12)]">Đăng nhập</button>
+            <button type="button" id="auth-tab-register" class="flex-1 rounded-full py-2.5 text-sm uppercase tracking-widest transition-all duration-300 border border-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5">Đăng ký</button>
+          </div>
+          <form id="form-login" class="space-y-4">
+            <div>
+              <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Email</label>
+              <input id="login-email" type="email" autocomplete="email" required class="w-full bg-black/40 border border-white/10 rounded-full px-4 py-2.5 text-white focus:border-bronze-gold focus:ring-1 focus:ring-bronze-gold/40 focus:outline-none transition-colors" />
+            </div>
+            <div>
+              <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Mật khẩu</label>
+              <input id="login-password" type="password" autocomplete="current-password" required class="w-full bg-black/40 border border-white/10 rounded-full px-4 py-2.5 text-white focus:border-bronze-gold focus:ring-1 focus:ring-bronze-gold/40 focus:outline-none transition-colors" />
+            </div>
+            <button type="submit" class="w-full py-3 rounded-full border-2 border-bronze-gold bg-bronze-gold text-ink-black font-bold uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(197,160,89,0.25)] hover:bg-white hover:border-white hover:shadow-[0_0_24px_rgba(255,255,255,0.12)] transition-all duration-300">Đăng nhập</button>
+          </form>
+          <form id="form-register" class="space-y-4 hidden">
+            <div>
+              <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Họ tên</label>
+              <input id="reg-name" type="text" autocomplete="name" required class="w-full bg-black/40 border border-white/10 rounded-full px-4 py-2.5 text-white focus:border-bronze-gold focus:ring-1 focus:ring-bronze-gold/40 focus:outline-none transition-colors" />
+            </div>
+            <div>
+              <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Email</label>
+              <input id="reg-email" type="email" autocomplete="email" required class="w-full bg-black/40 border border-white/10 rounded-full px-4 py-2.5 text-white focus:border-bronze-gold focus:ring-1 focus:ring-bronze-gold/40 focus:outline-none transition-colors" />
+            </div>
+            <div>
+              <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Mật khẩu (tối thiểu 6 ký tự)</label>
+              <input id="reg-password" type="password" autocomplete="new-password" required minlength="6" class="w-full bg-black/40 border border-white/10 rounded-full px-4 py-2.5 text-white focus:border-bronze-gold focus:ring-1 focus:ring-bronze-gold/40 focus:outline-none transition-colors" />
+            </div>
+            <p class="text-xs text-gray-500">Đăng ký mặc định vai trò <strong class="text-bronze-gold">Thành viên</strong> (theo bảng phân quyền trong báo cáo).</p>
+            <button type="submit" class="w-full py-3 rounded-full border-2 border-bronze-gold bg-bronze-gold text-ink-black font-bold uppercase tracking-widest text-sm shadow-[0_0_20px_rgba(197,160,89,0.25)] hover:bg-white hover:border-white hover:shadow-[0_0_24px_rgba(255,255,255,0.12)] transition-all duration-300">Tạo tài khoản</button>
+          </form>
+          <p id="auth-msg" class="mt-4 text-sm min-h-[1.25rem]"></p>
+          <div class="mt-8 border-t border-white/10 pt-6">
+            <p class="text-xs uppercase tracking-widest text-gray-500 mb-3">Phân quyền (theo baocao.txt)</p>
+            <div class="overflow-x-auto text-xs text-gray-400">
+              <table class="w-full border-collapse">
+                <thead>
+                  <tr class="text-left text-bronze-gold/90 border-b border-white/10">
+                    <th class="py-2 pr-2">Chức năng</th>
+                    <th class="py-2 px-1">Khách</th>
+                    <th class="py-2 px-1">TV</th>
+                    <th class="py-2 px-1">Nghệ nhân</th>
+                    <th class="py-2 pl-1">Admin</th>
+                  </tr>
+                </thead>
+                <tbody class="text-gray-500">
+                  <tr class="border-b border-white/5"><td class="py-1.5 pr-2">Xem Timeline / Map</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+                  <tr class="border-b border-white/5"><td class="py-1.5 pr-2">AI Art Lab</td><td>Giới hạn</td><td>Full</td><td>✓</td><td>✓</td></tr>
+                  <tr class="border-b border-white/5"><td class="py-1.5 pr-2">Cộng đồng</td><td>—</td><td>✓</td><td>✓</td><td>✓</td></tr>
+                  <tr class="border-b border-white/5"><td class="py-1.5 pr-2">Mua hàng</td><td>—</td><td>✓</td><td>✓</td><td>✓</td></tr>
+                  <tr class="border-b border-white/5"><td class="py-1.5 pr-2">Gian hàng / Sự kiện</td><td>—</td><td>—</td><td>✓</td><td>✓</td></tr>
+                  <tr><td class="py-1.5 pr-2">Quản trị hệ thống</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- HOME -->
     <section class="page-section overflow-hidden" data-route="/" id="page-home">
       <section class="relative h-screen flex items-center justify-center overflow-hidden">
@@ -272,6 +608,7 @@
           <h1 class="font-display text-4xl md:text-6xl mb-4">The Digital Scribe</h1>
           <p class="text-gray-400 max-w-2xl mx-auto font-serif italic">"Enter a word, and let the AI spirit reveal its soul through the lens of Vietnamese philosophy."</p>
         </header>
+        <div id="ai-role-banner" class="hidden mb-8 rounded-xl border border-bronze-gold/30 bg-bronze-gold/5 px-4 py-3 text-sm text-gray-300 max-w-4xl mx-auto text-left leading-relaxed"></div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
           <form id="ai-form" class="glass-panel p-8 rounded-xl border border-white/10 shadow-2xl relative overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-lacquer-red to-bronze-gold"></div>
@@ -328,6 +665,13 @@
             <span class="font-display text-3xl text-bronze-gold" data-stat="sites">—</span>
             <p class="text-xs uppercase tracking-widest text-gray-500 mt-1">Điểm di sản</p>
           </div>
+        </div>
+        <p id="community-role-note" class="hidden mb-6 text-sm text-amber-100/90 glass-panel rounded-lg px-4 py-3 border border-amber-500/20"></p>
+        <div id="artisan-panel" class="hidden mb-8 glass-panel rounded-xl p-4 border border-jade-green/30 text-sm text-gray-300">
+          <strong class="text-jade-green">Nghệ nhân / Quản trị:</strong> Quản lý gian hàng &amp; sự kiện theo phân quyền báo cáo — luồng quản trị chi tiết có thể nối thêm API sau.
+        </div>
+        <div id="admin-panel" class="hidden mb-8 glass-panel rounded-xl p-4 border border-bronze-gold/30 text-sm text-gray-300">
+          <strong class="text-bronze-gold">Quản trị viên:</strong> Toàn quyền cấu hình hệ thống; dữ liệu người dùng lưu trong MySQL (<code class="text-xs">users.role</code>).
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
           <div>
@@ -507,6 +851,7 @@
     </div>
   </footer>
   <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+  <script src="js/auth.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
