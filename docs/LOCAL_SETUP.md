@@ -38,19 +38,22 @@ cd ..
 - Linux: sudo apt install mysql-server
 ```
 
-### 2.2. Tạo Database & Import Schema
-```bash
-# 1. Đăng nhập MySQL
-mysql -u root -p
+### 2.2. **1-Click Auto Setup** (Mới!)
+```
+✅ Script: database/setup_database.js
 
-# 2. Tạo DB
-CREATE DATABASE PBL5 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+Chạy 1 lệnh:
+cd database
+node setup_database.js
 
-# 3. Thoát MySQL, import schema
-mysql -u root -p PBL5 < database/schema.sql
+**Tự động:**
+✅ Test MySQL connection
+✅ Tạo DB PBL5 (utf8mb4)
+✅ Import schema.sql (14 tables)
+✅ Verify tables + show list
+✅ Troubleshooting guide
 
-# 4. Verify
-mysql -u root -p PBL5 -e "SHOW TABLES;"
+⏱️ 10 giây hoàn thành!
 ```
 
 **Lưu ý**: Password mặc định `123456789` trong `.env`. **Đổi ngay khi production!**

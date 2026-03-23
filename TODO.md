@@ -16,13 +16,20 @@ JWT_SECRET=viet-heritage-hub-secret-2024-change-this
 PORT=3000
 ```
 
-### 2. Database Setup [-]
-- [ ] Install MySQL if not installed
-- [ ] Start MySQL service
-- [ ] `mysql -u root -p`
-- [ ] `CREATE DATABASE PBL5 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
-- [ ] `mysql -u root -p PBL5 < database/schema.sql`
-- [ ] Verify tables exist: `SHOW TABLES;`
+### 2. Database Setup [1-click Script]
+```
+✅ Tạo: database/setup_database.js
+
+Chạy 1 lệnh:
+cd database && node setup_database.js
+
+Script tự động:
+1️⃣ Test MySQL
+2️⃣ Tạo DB PBL5 
+3️⃣ Import schema.sql (14 tables)
+4️⃣ Verify tables
+```
+**Thời gian: 10s** - Không cần copy/paste SQL!
 
 ### 3. Backend Dependencies [-]
 - [ ] `npm install` (root)

@@ -330,67 +330,131 @@
   }
 
   function initAIStudio() {
-    const form = document.getElementById('ai-form');
-    const out = document.getElementById('ai-output');
-    const empty = document.getElementById('ai-empty');
-    const btn = document.getElementById('ai-submit');
-    const input = document.getElementById('ai-word');
-    if (!form || !out) return;
+    const tabBtns = document.querySelectorAll('.ai-tab-btn');
+    const aiViews = document.querySelectorAll('.ai-view');
+    
+    if (tabBtns.length === 0) return;
 
-    const styles = ['Thư pháp (Traditional)', 'Modern Minimalist', 'Imperial Seal', 'Bamboo Script'];
-    let selectedStyle = styles[0];
+    // Tab Switching Logic
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetTab = btn.getAttribute('data-ai-tab');
+        
+        // Update Buttons
+        tabBtns.forEach(b => {
+          const isActive = b === btn;
+          b.classList.toggle('active', isActive);
+          b.classList.toggle('border-bronze-gold/50', isActive);
+          b.classList.toggle('bg-bronze-gold/10', isActive);
+          b.classList.toggle('text-white', isActive);
+          b.classList.toggle('border-white/10', !isActive);
+          b.classList.toggle('text-gray-500', !isActive);
+        });
 
-    document.querySelectorAll('[data-style-pick]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        selectedStyle = b.getAttribute('data-style-pick') || selectedStyle;
-        document.querySelectorAll('[data-style-pick]').forEach(function (x) {
-          const on = x.getAttribute('data-style-pick') === selectedStyle;
-          x.className =
-            'p-3 text-sm border rounded transition-all style-btn ' +
-            (on ? 'border-bronze-gold bg-bronze-gold/10 text-white' : 'border-white/10 text-gray-500 hover:border-white/30');
+        // Update Views
+        aiViews.forEach(view => {
+          view.classList.toggle('hidden', view.id !== `ai-view-${targetTab}`);
         });
       });
     });
 
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      const word = (input && input.value) ? input.value.trim() : '';
-      if (!word) return;
+    // --- CALLIGRAPHY LOGIC ---
+    const calliForm = document.getElementById('ai-form');
+    const calliOut = document.getElementById('ai-output');
+    const calliEmpty = document.getElementById('ai-empty');
+    const calliBtn = document.getElementById('ai-submit');
+    const calliInput = document.getElementById('ai-word');
 
-      btn.disabled = true;
-      btn.innerHTML = '<span class="inline-block animate-spin">&#10226;</span> Generating…';
-      out.classList.add('hidden');
-      empty.classList.remove('hidden');
-
-      fetch('/api/ai/calligraphy-meaning', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ word: word, style: selectedStyle })
-      })
-        .then(function (r) {
-          return r.json();
-        })
-        .then(function (data) {
-          empty.classList.add('hidden');
-          out.classList.remove('hidden');
-          const md = data.markdown || data.error || 'No content.';
-          if (typeof marked !== 'undefined' && marked.parse) {
-            out.innerHTML = '<div class="ai-output prose prose-invert max-w-none">' + marked.parse(md) + '</div>';
-          } else {
-            out.innerHTML = '<pre class="text-left text-gray-300 whitespace-pre-wrap">' + escapeHtml(md) + '</pre>';
-          }
-        })
-        .catch(function () {
-          empty.classList.add('hidden');
-          out.classList.remove('hidden');
-          out.innerHTML = '<p class="text-red-400">Không gọi được API. Kiểm tra backend đang chạy.</p>';
-        })
-        .finally(function () {
-          btn.disabled = false;
-          btn.innerHTML =
-            '<svg class="inline w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg> Ink The Meaning';
+    if (calliForm) {
+      let selectedStyle = 'Thư pháp (Traditional)';
+      document.querySelectorAll('[data-style-pick]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          selectedStyle = b.getAttribute('data-style-pick') || selectedStyle;
+          document.querySelectorAll('[data-style-pick]').forEach(function (x) {
+            const on = x.getAttribute('data-style-pick') === selectedStyle;
+            x.className = 'p-3 text-[10px] uppercase tracking-wider border rounded transition-all ' + 
+              (on ? 'border-bronze-gold bg-bronze-gold/10 text-white' : 'border-white/10 text-gray-500 hover:border-white/30');
+          });
         });
-    });
+      });
+
+      calliForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const word = (calliInput && calliInput.value) ? calliInput.value.trim() : '';
+        if (!word) return;
+
+        calliBtn.disabled = true;
+        calliBtn.innerHTML = '<span class="inline-block animate-spin">&#10226;</span> Đang khai bút…';
+        calliOut.classList.add('hidden');
+        calliEmpty.classList.remove('hidden');
+
+        fetch('/api/ai/calligraphy-meaning', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ word: word, style: selectedStyle })
+        })
+          .then(r => r.json())
+          .then(data => {
+            calliEmpty.classList.add('hidden');
+            calliOut.classList.remove('hidden');
+            const md = data.markdown || data.error || 'Không có nội dung trả về.';
+            if (typeof marked !== 'undefined' && marked.parse) {
+              calliOut.innerHTML = '<div class="ai-output prose prose-invert max-w-none">' + marked.parse(md) + '</div>';
+            } else {
+              calliOut.innerHTML = '<pre class="text-left text-gray-300 whitespace-pre-wrap">' + escapeHtml(md) + '</pre>';
+            }
+          })
+          .catch(() => {
+            calliEmpty.classList.add('hidden');
+            calliOut.classList.remove('hidden');
+            calliOut.innerHTML = '<p class="text-red-400">Lỗi kết nối AI. Vui lòng thử lại sau.</p>';
+          })
+          .finally(() => {
+            calliBtn.disabled = false;
+            calliBtn.innerHTML = '✒ Khai bút xin chữ';
+          });
+      });
+    }
+
+    // --- RESTORATION LOGIC (MOCK) ---
+    const dropzone = document.getElementById('photo-dropzone');
+    const photoInput = document.getElementById('photo-input');
+    const btnRestore = document.getElementById('btn-restore');
+    const restorePreview = document.getElementById('restoration-preview');
+    const restoreResult = document.getElementById('restoration-result');
+
+    if (dropzone && photoInput) {
+      dropzone.onclick = () => photoInput.click();
+      photoInput.onchange = (e) => {
+        if (e.target.files && e.target.files[0]) {
+          restorePreview.innerHTML = `
+            <div class="animate-pulse flex flex-col items-center">
+              <div class="w-16 h-16 bg-bronze-gold/20 rounded-full flex items-center justify-center text-2xl mb-4">📸</div>
+              <p class="text-bronze-gold">Đã nhận ảnh: ${e.target.files[0].name}</p>
+              <p class="text-xs text-gray-500 mt-2">Nhấn "Bắt đầu phục chế" để xử lý</p>
+            </div>
+          `;
+        }
+      };
+    }
+
+    if (btnRestore) {
+      btnRestore.onclick = () => {
+        if (!photoInput.files || !photoInput.files[0]) {
+          alert('Vui lòng chọn ảnh trước.');
+          return;
+        }
+        btnRestore.disabled = true;
+        btnRestore.innerHTML = '<span class="inline-block animate-spin">&#10226;</span> Đang xử lý...';
+        
+        setTimeout(() => {
+          restorePreview.classList.add('hidden');
+          restoreResult.classList.remove('hidden');
+          btnRestore.disabled = false;
+          btnRestore.innerHTML = '✨ Bắt đầu phục chế';
+        }, 2000);
+      };
+    }
   }
 
   function escapeHtml(s) {
