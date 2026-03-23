@@ -231,7 +231,7 @@
             <!-- MAP TAB -->
             <div id="admin-view-map" class="admin-view hidden glass-panel p-8 rounded-xl border border-white/10 shadow-2xl">
               <div class="flex justify-between items-center mb-6">
-                <h2 class="font-display text-2xl text-white">Thêm điểm di sản</h2>
+                <h2 class="font-display text-2xl text-white">Quản lý Bản đồ Di sản</h2>
                 <button type="button" id="admin-add-map-btn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm uppercase tracking-wider transition-all">
                   + Thêm điểm mới
                 </button>
@@ -244,20 +244,32 @@
                     <input id="admin-map-name" type="text" required class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
                   </div>
                   <div>
-                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Vĩ độ (Lat)</label>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Loại di sản</label>
+                    <select id="admin-map-type" class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none">
+                      <option value="Di tích">Di tích</option>
+                      <option value="Lễ hội">Lễ hội</option>
+                      <option value="Làng nghề">Làng nghề</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Vùng miền âm nhạc</label>
+                    <input id="admin-map-region-music" type="text" placeholder="Ví dụ: Quan họ, Ca trù..." class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Vĩ độ (Latitude)</label>
                     <input id="admin-map-lat" type="number" step="any" required class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
                   </div>
                   <div>
-                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Kinh độ (Lng)</label>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Kinh độ (Longitude)</label>
                     <input id="admin-map-lng" type="number" step="any" required class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
                   </div>
-                  <div>
-                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Vùng miền</label>
-                    <select id="admin-map-region" class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none">
-                      <option value="North">Miền Bắc</option>
-                      <option value="Central">Miền Trung</option>
-                      <option value="South">Miền Nam</option>
-                    </select>
+                  <div class="md:col-span-2">
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Mô tả (Tiếng Việt)</label>
+                    <textarea id="admin-map-desc-vi" rows="3" class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none"></textarea>
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Description (English)</label>
+                    <textarea id="admin-map-desc-en" rows="3" class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none"></textarea>
                   </div>
                   <div class="md:col-span-2 flex gap-3">
                     <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded uppercase tracking-widest text-sm transition-all">Lưu</button>
@@ -270,7 +282,8 @@
                   <thead>
                     <tr class="text-gray-400 border-b border-white/10 uppercase tracking-widest text-xs">
                       <th class="py-4 px-2">Tên di sản</th>
-                      <th class="py-4 px-2">Vùng</th>
+                      <th class="py-4 px-2">Loại</th>
+                      <th class="py-4 px-2">Vị trí (Lat, Lng)</th>
                       <th class="py-4 px-2 text-right">Thao tác</th>
                     </tr>
                   </thead>
@@ -570,7 +583,6 @@
         <div class="relative z-10 text-center px-4 max-w-3xl">
           <p class="text-bronze-gold uppercase tracking-[0.35em] text-xs mb-3">Cultural Atlas</p>
           <h1 class="font-display text-4xl md:text-6xl text-white mb-3">Bản đồ di sản tương tác</h1>
-          <p class="text-gray-300 font-serif italic">Khám phá các điểm di sản mẫu — dữ liệu từ <code class="text-bronze-gold text-sm not-italic">GET /api/sites</code></p>
         </div>
       </div>
       <div class="container mx-auto px-4 pt-8 -mt-6 relative z-20">
@@ -581,10 +593,10 @@
               <input type="search" id="map-search" placeholder="Tên di sản…" class="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-bronze-gold focus:outline-none" />
             </div>
             <div class="flex flex-wrap gap-2" id="map-region-filters">
-              <button type="button" data-region="all" class="map-filter px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border border-bronze-gold bg-bronze-gold/10 text-white">Tất cả</button>
-              <button type="button" data-region="North" class="map-filter px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border border-white/20 text-gray-400 hover:border-bronze-gold/50">Miền Bắc</button>
-              <button type="button" data-region="Central" class="map-filter px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border border-white/20 text-gray-400 hover:border-bronze-gold/50">Trung</button>
-              <button type="button" data-region="South" class="map-filter px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border border-white/20 text-gray-400 hover:border-bronze-gold/50">Miền Nam</button>
+              <button type="button" data-map-type="all" class="map-filter px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border border-bronze-gold bg-bronze-gold/10 text-white">Tất cả</button>
+              <button type="button" data-map-type="Di tích" class="map-filter px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border border-white/20 text-gray-400 hover:border-bronze-gold/50">Di tích</button>
+              <button type="button" data-map-type="Lễ hội" class="map-filter px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border border-white/20 text-gray-400 hover:border-bronze-gold/50">Lễ hội</button>
+              <button type="button" data-map-type="Làng nghề" class="map-filter px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border border-white/20 text-gray-400 hover:border-bronze-gold/50">Làng nghề</button>
             </div>
             <div class="glass-panel rounded-xl border border-white/10 flex-1 min-h-[200px] max-h-[480px] overflow-y-auto">
               <ul id="map-site-list" class="divide-y divide-white/5">
@@ -723,96 +735,7 @@
         </div>
         <p id="mp-empty" class="hidden text-center text-gray-500 py-12">Không có sản phẩm phù hợp.</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8" id="mp-grid">
-          <article data-mp-card data-category="Lacquer" data-title="Lacquer Vase Lotus" class="group relative bg-white/5 rounded-sm overflow-hidden border border-white/5 hover:border-bronze-gold/50 transition-all duration-300">
-            <div class="relative h-[400px] overflow-hidden">
-              <img src="https://picsum.photos/300/400?random=10" alt="" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0" />
-              <div class="absolute top-4 right-4 bg-black/70 backdrop-blur px-3 py-1 text-bronze-gold text-sm font-bold">$120</div>
-              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition" aria-label="Cart">🛒</button>
-                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition" aria-label="Favorite">★</button>
-              </div>
-            </div>
-            <div class="p-6">
-              <div class="text-xs text-bronze-gold uppercase tracking-widest mb-1">Lacquer</div>
-              <h3 class="font-display text-xl mb-1">Lacquer Vase "Lotus"</h3>
-              <p class="text-gray-500 text-sm">By Nguyen Minh</p>
-            </div>
-          </article>
-          <article data-mp-card data-category="Clothing" data-title="Silk Ao Dai White" class="group relative bg-white/5 rounded-sm overflow-hidden border border-white/5 hover:border-bronze-gold/50 transition-all duration-300">
-            <div class="relative h-[400px] overflow-hidden">
-              <img src="https://picsum.photos/300/400?random=11" alt="" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0" />
-              <div class="absolute top-4 right-4 bg-black/70 backdrop-blur px-3 py-1 text-bronze-gold text-sm font-bold">$85</div>
-              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition">🛒</button>
-                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition">★</button>
-              </div>
-            </div>
-            <div class="p-6">
-              <div class="text-xs text-bronze-gold uppercase tracking-widest mb-1">Clothing</div>
-              <h3 class="font-display text-xl mb-1">Silk Ao Dai - White</h3>
-              <p class="text-gray-500 text-sm">By Silk Village</p>
-            </div>
-          </article>
-          <article data-mp-card data-category="Decor" data-title="Bronze Drum Replica" class="group relative bg-white/5 rounded-sm overflow-hidden border border-white/5 hover:border-bronze-gold/50 transition-all duration-300">
-            <div class="relative h-[400px] overflow-hidden">
-              <img src="https://picsum.photos/300/400?random=12" alt="" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0" />
-              <div class="absolute top-4 right-4 bg-black/70 backdrop-blur px-3 py-1 text-bronze-gold text-sm font-bold">$350</div>
-              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition">🛒</button>
-                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition">★</button>
-              </div>
-            </div>
-            <div class="p-6">
-              <div class="text-xs text-bronze-gold uppercase tracking-widest mb-1">Decor</div>
-              <h3 class="font-display text-xl mb-1">Bronze Drum Replica</h3>
-              <p class="text-gray-500 text-sm">By Dong Son Arts</p>
-            </div>
-          </article>
-          <article data-mp-card data-category="Home" data-title="Bamboo Tea Set" class="group relative bg-white/5 rounded-sm overflow-hidden border border-white/5 hover:border-bronze-gold/50 transition-all duration-300">
-            <div class="relative h-[400px] overflow-hidden">
-              <img src="https://picsum.photos/300/400?random=13" alt="" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0" />
-              <div class="absolute top-4 right-4 bg-black/70 backdrop-blur px-3 py-1 text-bronze-gold text-sm font-bold">$45</div>
-              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition">🛒</button>
-                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition">★</button>
-              </div>
-            </div>
-            <div class="p-6">
-              <div class="text-xs text-bronze-gold uppercase tracking-widest mb-1">Home</div>
-              <h3 class="font-display text-xl mb-1">Bamboo Tea Set</h3>
-              <p class="text-gray-500 text-sm">By EcoCraft</p>
-            </div>
-          </article>
-          <article data-mp-card data-category="Art" data-title="Embroidered Painting" class="group relative bg-white/5 rounded-sm overflow-hidden border border-white/5 hover:border-bronze-gold/50 transition-all duration-300">
-            <div class="relative h-[400px] overflow-hidden">
-              <img src="https://picsum.photos/300/400?random=14" alt="" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0" />
-              <div class="absolute top-4 right-4 bg-black/70 backdrop-blur px-3 py-1 text-bronze-gold text-sm font-bold">$200</div>
-              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition">🛒</button>
-                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition">★</button>
-              </div>
-            </div>
-            <div class="p-6">
-              <div class="text-xs text-bronze-gold uppercase tracking-widest mb-1">Art</div>
-              <h3 class="font-display text-xl mb-1">Embroidered Painting</h3>
-              <p class="text-gray-500 text-sm">By XQ Da Lat</p>
-            </div>
-          </article>
-          <article data-mp-card data-category="Ceramics" data-title="Ceramic Tea Pot" class="group relative bg-white/5 rounded-sm overflow-hidden border border-white/5 hover:border-bronze-gold/50 transition-all duration-300">
-            <div class="relative h-[400px] overflow-hidden">
-              <img src="https://picsum.photos/300/400?random=15" alt="" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0" />
-              <div class="absolute top-4 right-4 bg-black/70 backdrop-blur px-3 py-1 text-bronze-gold text-sm font-bold">$60</div>
-              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition">🛒</button>
-                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition">★</button>
-              </div>
-            </div>
-            <div class="p-6">
-              <div class="text-xs text-bronze-gold uppercase tracking-widest mb-1">Ceramics</div>
-              <h3 class="font-display text-xl mb-1">Ceramic Tea Pot</h3>
-              <p class="text-gray-500 text-sm">By Bat Trang</p>
-            </div>
-          </article>
+          <!-- Products will be loaded here from database -->
         </div>
       </div>
     </section>

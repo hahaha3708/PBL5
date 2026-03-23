@@ -78,11 +78,32 @@
   }
 
   function onRouteChange() {
-    showPage(getHashPath());
+    // Luôn lấy user mới nhất để kiểm tra quyền trước khi render
+    const user = window.VHAuth ? window.VHAuth.getUser() : null;
+    const path = getHashPath();
+    
+    // Nếu cố vào admin mà không có quyền thì đẩy về auth
+    if (path === '/admin') {
+      const isAdmin = user && user.role === 'admin';
+      const isArtisan = user && user.role === 'artisan';
+      if (!isAdmin && !isArtisan) {
+        window.location.hash = '#/auth';
+        return;
+      }
+    }
+
+    showPage(path);
   }
 
   function initRouter() {
     window.addEventListener('hashchange', onRouteChange);
+    window.addEventListener('vh-auth-change', function() {
+      // Khi auth thay đổi, nếu đang ở trang auth thì không cần re-run ngay (để tránh redirect loop)
+      // nhưng nếu đang ở trang khác thì cần cập nhật UI
+      if (getHashPath() !== '/auth') {
+        onRouteChange();
+      }
+    });
     if (!window.location.hash) {
       window.location.hash = '#/';
     }
@@ -334,12 +355,22 @@
       return;
     }
 
-    fetch('/api/sites')
+    fetch('/api/heritage-sites')
       .then(function (r) {
         return r.json();
       })
       .then(function (sites) {
-        window._mapSites = sites;
+        // Map backend fields to frontend expected fields
+        window._mapSites = sites.map(s => ({
+          id: s.id,
+          name: s.name,
+          lat: Number(s.latitude),
+          lng: Number(s.longitude),
+          type: s.type,
+          region_music: s.region_music,
+          desc_vi: s.description_vi,
+          desc_en: s.description_en
+        }));
         afterSites();
       })
       .catch(function () {
@@ -350,12 +381,12 @@
 
   function getFilteredSites() {
     const sites = window._mapSites || [];
-    const region = window._mapRegion || 'all';
+    const type = window._mapTypeFilter || 'all';
     const q = (window._mapSearch || '').toLowerCase().trim();
     let out = sites;
-    if (region !== 'all') {
+    if (type !== 'all') {
       out = out.filter(function (s) {
-        return s.region === region;
+        return s.type === type;
       });
     }
     if (q) {
@@ -383,13 +414,18 @@
     const bounds = [];
     sites.forEach(function (site) {
       const m = L.marker([site.lat, site.lng]);
-      m.bindPopup(
-        '<strong>' +
-          escapeHtml(site.name) +
-          '</strong><br><span style="opacity:.8;font-size:12px">' +
-          escapeHtml(site.region || '') +
-          '</span>'
-      );
+      const popupHtml = `
+        <div style="min-width: 180px;">
+          <strong style="color: #c5a059; font-size: 14px;">${escapeHtml(site.name)}</strong>
+          <div style="font-size: 11px; color: #888; margin-top: 2px;">
+            ${escapeHtml(site.type || '')} · ${escapeHtml(site.region_music || '')}
+          </div>
+          <p style="font-size: 12px; margin-top: 6px; line-height: 1.4;">
+            ${escapeHtml(site.desc_vi || '')}
+          </p>
+        </div>
+      `;
+      m.bindPopup(popupHtml);
       mapMarkersLayer.addLayer(m);
       bounds.push([site.lat, site.lng]);
     });
@@ -417,11 +453,9 @@
           escapeHtml(site.name) +
           '</div>' +
           '<div class="text-xs text-gray-500 mt-1">' +
-          escapeHtml(site.region || '') +
+          escapeHtml(site.type || '') +
           ' · ' +
-          Number(site.lat).toFixed(2) +
-          ', ' +
-          Number(site.lng).toFixed(2) +
+          escapeHtml(site.region_music || '') +
           '</div></li>'
         );
       })
@@ -440,27 +474,41 @@
 
   function initMapControls() {
     const search = document.getElementById('map-search');
+    const filters = document.querySelectorAll('.map-filter');
+
     if (search) {
       search.addEventListener('input', function () {
         window._mapSearch = search.value || '';
         applyMapFilters();
       });
     }
-    document.querySelectorAll('.map-filter').forEach(function (btn) {
+
+    filters.forEach(function (btn) {
       btn.addEventListener('click', function () {
-        const r = btn.getAttribute('data-region') || 'all';
-        window._mapRegion = r;
-        document.querySelectorAll('.map-filter').forEach(function (b) {
-          const on = (b.getAttribute('data-region') || 'all') === r;
-          b.className =
-            'map-filter px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border ' +
-            (on
-              ? 'border-bronze-gold bg-bronze-gold/10 text-white'
-              : 'border-white/20 text-gray-400 hover:border-bronze-gold/50');
+        window._mapTypeFilter = btn.getAttribute('data-map-type') || 'all';
+        filters.forEach(b => {
+          const on = (b.getAttribute('data-map-type') || 'all') === window._mapTypeFilter;
+          b.className = `map-filter px-3 py-1.5 rounded-full text-xs uppercase tracking-wider border ${on ? 'border-bronze-gold bg-bronze-gold/10 text-white' : 'border-white/20 text-gray-400 hover:border-bronze-gold/50'}`;
         });
         applyMapFilters();
       });
     });
+
+    // Delegated click for site items
+    const ul = document.getElementById('map-site-list');
+    if (ul) {
+      ul.addEventListener('click', function (e) {
+        const li = e.target.closest('.map-site-item');
+        if (!li) return;
+        const lat = parseFloat(li.getAttribute('data-lat'));
+        const lng = parseFloat(li.getAttribute('data-lng'));
+        if (heritageMap && !isNaN(lat) && !isNaN(lng)) {
+          heritageMap.flyTo([lat, lng], 10);
+        }
+      });
+    }
+
+    initMapPage();
   }
 
   function initCommunityPage() {
@@ -555,24 +603,72 @@
   }
 
   function initMarketplace() {
-    const cards = document.querySelectorAll('[data-mp-card]');
+    const grid = document.getElementById('mp-grid');
     const empty = document.getElementById('mp-empty');
     const search = document.getElementById('mp-search');
+    let allProducts = [];
     let cat = 'all';
     let q = '';
 
+    function renderProducts(products) {
+      if (!grid) return;
+      grid.innerHTML = products
+        .map(p => `
+          <article data-mp-card data-category="${escapeHtml(p.category || '')}" data-title="${escapeHtml(p.name || '')}" class="group relative bg-white/5 rounded-sm overflow-hidden border border-white/5 hover:border-bronze-gold/50 transition-all duration-300">
+            <div class="relative h-[400px] overflow-hidden">
+              <img src="${p.image_url || `https://picsum.photos/300/400?random=${p.id}`}" alt="${escapeHtml(p.name || '')}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 grayscale group-hover:grayscale-0" />
+              <div class="absolute top-4 right-4 bg-black/70 backdrop-blur px-3 py-1 text-bronze-gold text-sm font-bold">${new Intl.NumberFormat('vi-VN').format(Number(p.price) || 0)} đ</div>
+              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition" aria-label="Cart">🛒</button>
+                <button type="button" class="bg-white text-black p-3 rounded-full hover:bg-bronze-gold transition" aria-label="Favorite">★</button>
+              </div>
+            </div>
+            <div class="p-6">
+              <div class="text-xs text-bronze-gold uppercase tracking-widest mb-1">${escapeHtml(p.category || '')}</div>
+              <h3 class="font-display text-xl mb-1">${escapeHtml(p.name || '')}</h3>
+              <p class="text-gray-500 text-sm">${escapeHtml(p.description || '')}</p>
+            </div>
+          </article>
+        `).join('');
+    }
+
+    function fetchProducts() {
+      console.log('Marketplace: Fetching products...');
+      fetch('/api/products')
+        .then(res => {
+          console.log('Marketplace: Response status:', res.status);
+          if (!res.ok) throw new Error('Network response was not ok: ' + res.status);
+          return res.json();
+        })
+        .then(data => {
+          console.log('Marketplace: Data received:', data);
+          if (Array.isArray(data)) {
+            allProducts = data;
+            applyMp();
+          } else {
+            console.error('API returned non-array data:', data);
+          }
+        })
+        .catch(err => {
+          console.error('Marketplace: Fetch error:', err);
+          const grid = document.getElementById('mp-grid');
+          if (grid) grid.innerHTML = `<p class="col-span-full text-center text-red-400">Lỗi kết nối máy chủ (${err.message}). Vui lòng thử lại sau.</p>`;
+        });
+    }
+
     function applyMp() {
-      let n = 0;
-      cards.forEach(function (card) {
-        const c = card.getAttribute('data-category') || '';
-        const title = (card.getAttribute('data-title') || '') + ' ' + (card.textContent || '');
-        const okCat = cat === 'all' || c === cat;
-        const okQ = !q || title.toLowerCase().indexOf(q) !== -1;
-        const show = okCat && okQ;
-        card.classList.toggle('hidden', !show);
-        if (show) n++;
+      const filtered = allProducts.filter(p => {
+        const name = (p.name || '').toLowerCase();
+        const desc = (p.description || '').toLowerCase();
+        const category = p.category || '';
+        
+        const okCat = cat === 'all' || category === cat;
+        const okQ = !q || name.includes(q) || desc.includes(q);
+        return okCat && okQ;
       });
-      if (empty) empty.classList.toggle('hidden', n !== 0);
+      
+      renderProducts(filtered);
+      if (empty) empty.classList.toggle('hidden', filtered.length !== 0);
     }
 
     document.querySelectorAll('.mp-filter').forEach(function (btn) {
@@ -597,10 +693,12 @@
       });
     }
 
-    var grid = document.getElementById('mp-grid');
-    if (grid) {
-      grid.addEventListener('click', function (e) {
-        var btn = e.target.closest('button');
+    fetchProducts();
+
+    const gridEl = document.getElementById('mp-grid');
+    if (gridEl) {
+      gridEl.addEventListener('click', function (e) {
+        const btn = e.target.closest('button');
         if (!btn || !btn.closest('[data-mp-card]')) return;
         if (window.VHAuth && !window.VHAuth.canPurchase()) {
           e.preventDefault();
@@ -613,7 +711,7 @@
   }
 
   function initAdminPage() {
-    if (!window.VHAuth || !window.VHAuth.isAdmin()) {
+    if (!window.VHAuth || (!window.VHAuth.isAdmin() && !window.VHAuth.canManageShopOrEvents())) {
       window.location.hash = '#/auth';
       return;
     }
@@ -624,11 +722,40 @@
     const addUserBtn = document.getElementById('admin-add-user-btn');
     const cancelBtn = document.getElementById('admin-user-cancel');
 
+    const historyFormContainer = document.getElementById('admin-history-form-container');
+    const historyForm = document.getElementById('admin-history-form');
+    const addHistoryBtn = document.getElementById('admin-add-history-btn');
+    const cancelHistoryBtn = document.getElementById('admin-history-cancel');
+
+    const mapFormContainer = document.getElementById('admin-map-form-container');
+    const mapForm = document.getElementById('admin-map-form');
+    const addMapBtn = document.getElementById('admin-add-map-btn');
+    const cancelMapBtn = document.getElementById('admin-map-cancel');
+
+    const productFormContainer = document.getElementById('admin-product-form-container');
+    const productForm = document.getElementById('admin-product-form');
+    const addProductBtn = document.getElementById('admin-add-product-btn');
+    const cancelProductBtn = document.getElementById('admin-product-cancel');
+
     // Tab switching logic
     const tabBtns = document.querySelectorAll('.admin-tab-btn');
     const adminViews = document.querySelectorAll('.admin-view');
 
+    // Phân quyền tab (admin full, artisan limited)
+    const isAdmin = window.VHAuth.isAdmin();
+    const isArtisan = window.VHAuth.canManageShopOrEvents() && !isAdmin;
+
+    // Cập nhật tiêu đề dựa trên role
+    const adminTitle = document.querySelector('#page-admin h1');
+    const adminSub = document.querySelector('#page-admin p');
+    if (adminTitle) adminTitle.textContent = isAdmin ? 'Admin Dashboard' : 'Artisan Dashboard';
+    if (adminSub) adminSub.textContent = isAdmin ? 'Quản lý hệ thống và nội dung di sản.' : 'Quản lý gian hàng và sự kiện của bạn.';
+
     tabBtns.forEach(btn => {
+      const tab = btn.getAttribute('data-admin-tab');
+      const isVisible = isAdmin || (isArtisan && (tab === 'community' || tab === 'marketplace'));
+      btn.classList.toggle('hidden', !isVisible);
+      
       btn.addEventListener('click', () => {
         const targetTab = btn.getAttribute('data-admin-tab');
         
@@ -654,8 +781,13 @@
       });
     });
 
+    // Mặc định chọn tab đầu tiên có thể xem
+    const firstTab = Array.from(tabBtns).find(b => !b.classList.contains('hidden'));
+    if (firstTab) firstTab.click();
+
     // --- USERS MANAGEMENT ---
     function loadUsers() {
+      if (!userList) return;
       fetch('/api/users', { headers: window.VHAuth.authHeaders() })
         .then(res => res.json())
         .then(users => {
@@ -664,7 +796,7 @@
         })
         .catch(err => {
           console.error('Failed to load users:', err);
-          if (userList) userList.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-red-400">Không tải được danh sách.</td></tr>';
+          userList.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-red-400">Không tải được danh sách.</td></tr>';
         });
     }
 
@@ -688,129 +820,18 @@
       `).join('');
     }
 
-    // --- HISTORY MANAGEMENT ---
-    function loadHistory() {
-      const list = document.getElementById('admin-history-list');
-      if (!list) return;
-      list.innerHTML = '<tr><td colspan="3" class="py-4 text-center">Đang tải...</td></tr>';
-      
-      fetch('/api/history') // Assuming this exists or using stats stub
-        .then(res => res.json())
-        .then(data => {
-          // Render data if available, else show empty
-          list.innerHTML = '<tr><td colspan="3" class="py-4 text-center text-gray-500">Chưa có dữ liệu lịch sử.</td></tr>';
-        })
-        .catch(() => {
-          list.innerHTML = '<tr><td colspan="3" class="py-4 text-center text-red-400">Lỗi tải dữ liệu.</td></tr>';
-        });
-    }
-
-    // --- MAP MANAGEMENT ---
-    function loadMapPoints() {
-      const list = document.getElementById('admin-map-list');
-      if (!list) return;
-      list.innerHTML = '<tr><td colspan="3" class="py-4 text-center">Đang tải...</td></tr>';
-      
-      fetch('/api/sites')
-        .then(res => res.json())
-        .then(sites => {
-          list.innerHTML = sites.map(s => `
-            <tr class="border-b border-white/5">
-              <td class="py-4 px-2">${s.name}</td>
-              <td class="py-4 px-2 text-gray-400">${s.region}</td>
-              <td class="py-4 px-2 text-right">
-                <button class="text-bronze-gold hover:text-white transition-colors mr-3">Sửa</button>
-                <button class="text-red-500 hover:text-white transition-colors">Xóa</button>
-              </td>
-            </tr>
-          `).join('');
-        })
-        .catch(() => {
-          list.innerHTML = '<tr><td colspan="3" class="py-4 text-center text-red-400">Lỗi tải dữ liệu.</td></tr>';
-        });
-    }
-
-    // --- COMMUNITY MANAGEMENT ---
-    function loadCommunityPosts() {
-      const list = document.getElementById('admin-community-list');
-      if (!list) return;
-      list.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-gray-500">Chưa có bài đăng nào cần duyệt.</td></tr>';
-    }
-
-    // --- MARKETPLACE MANAGEMENT ---
-    function loadMarketplaceProducts() {
-      const list = document.getElementById('admin-product-list');
-      if (!list) return;
-      list.innerHTML = '<tr><td colspan="4" class="py-4 text-center">Đang tải...</td></tr>';
-      
-      // Using marketplace grid items as reference for demo
-      const mockProducts = [
-        { name: 'Bình gốm Bát Tràng', price: '550.000', category: 'Ceramics' },
-        { name: 'Áo dài lụa Hà Đông', price: '1.200.000', category: 'Clothing' }
-      ];
-      
-      list.innerHTML = mockProducts.map(p => `
-        <tr class="border-b border-white/5">
-          <td class="py-4 px-2 font-bold">${p.name}</td>
-          <td class="py-4 px-2 text-bronze-gold">${p.price} đ</td>
-          <td class="py-4 px-2 text-gray-400">${p.category}</td>
-          <td class="py-4 px-2 text-right">
-            <button class="text-bronze-gold hover:text-white transition-colors mr-3">Sửa</button>
-            <button class="text-red-500 hover:text-white transition-colors">Xóa</button>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    function loadUsers() {
-      fetch('/api/users', {
-        headers: window.VHAuth.authHeaders()
-      })
-      .then(res => res.json())
-      .then(users => {
-        if (users.error) throw new Error(users.error);
-        renderUsers(users);
-      })
-      .catch(err => {
-        console.error('Failed to load users:', err);
-        if (userList) userList.innerHTML = '<tr><td colspan="5" class="py-4 text-center text-red-400">Không tải được danh sách người dùng.</td></tr>';
-      });
-    }
-
-    function renderUsers(users) {
-      if (!userList) return;
-      userList.innerHTML = users.map(user => `
-        <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
-          <td class="py-4 px-2 text-gray-500">${user.id}</td>
-          <td class="py-4 px-2 font-bold">${user.name}</td>
-          <td class="py-4 px-2 text-gray-400">${user.email}</td>
-          <td class="py-4 px-2">
-            <span class="px-2 py-0.5 rounded-full border border-white/20 text-[10px] uppercase tracking-wider ${user.role === 'admin' ? 'text-red-400 border-red-400/30 bg-red-400/5' : ''}">
-              ${user.role}
-            </span>
-          </td>
-          <td class="py-4 px-2 flex gap-2">
-            <button onclick="window._adminEditUser(${user.id})" class="text-bronze-gold hover:text-white transition-colors">Sửa</button>
-            <button onclick="window._adminDeleteUser(${user.id})" class="text-red-500 hover:text-white transition-colors">Xóa</button>
-          </td>
-        </tr>
-      `).join('');
-    }
-
     window._adminEditUser = function(id) {
-      fetch(`/api/users/${id}`, {
-        headers: window.VHAuth.authHeaders()
-      })
-      .then(res => res.json())
-      .then(user => {
-        document.getElementById('admin-user-id').value = user.id;
-        document.getElementById('admin-user-name').value = user.name;
-        document.getElementById('admin-user-email').value = user.email;
-        document.getElementById('admin-user-role').value = user.role;
-        document.getElementById('admin-user-password').value = '';
-        userFormContainer.classList.remove('hidden');
-        userFormContainer.scrollIntoView({ behavior: 'smooth' });
-      });
+      fetch(`/api/users/${id}`, { headers: window.VHAuth.authHeaders() })
+        .then(res => res.json())
+        .then(user => {
+          document.getElementById('admin-user-id').value = user.id;
+          document.getElementById('admin-user-name').value = user.name;
+          document.getElementById('admin-user-email').value = user.email;
+          document.getElementById('admin-user-role').value = user.role;
+          document.getElementById('admin-user-password').value = '';
+          userFormContainer.classList.remove('hidden');
+          userFormContainer.scrollIntoView({ behavior: 'smooth' });
+        });
     };
 
     window._adminDeleteUser = function(id) {
@@ -827,95 +848,243 @@
       .catch(err => alert('Lỗi: ' + err.message));
     };
 
-    if (addUserBtn) {
-      addUserBtn.onclick = () => {
-        userForm.reset();
-        document.getElementById('admin-user-id').value = '';
-        userFormContainer.classList.toggle('hidden');
-      };
-    }
-
-    // Add buttons for other modules
-    const addHistoryBtn = document.getElementById('admin-add-history-btn');
-    const historyFormContainer = document.getElementById('admin-history-form-container');
-    if (addHistoryBtn) {
-      addHistoryBtn.onclick = () => {
-        document.getElementById('admin-history-form').reset();
-        document.getElementById('admin-history-id').value = '';
-        historyFormContainer.classList.toggle('hidden');
-      };
-    }
-
-    const addMapBtn = document.getElementById('admin-add-map-btn');
-    const mapFormContainer = document.getElementById('admin-map-form-container');
-    if (addMapBtn) {
-      addMapBtn.onclick = () => {
-        document.getElementById('admin-map-form').reset();
-        document.getElementById('admin-map-id').value = '';
-        mapFormContainer.classList.toggle('hidden');
-      };
-    }
-
-    const addProductBtn = document.getElementById('admin-add-product-btn');
-    const productFormContainer = document.getElementById('admin-product-form-container');
-    if (addProductBtn) {
-      addProductBtn.onclick = () => {
-        document.getElementById('admin-product-form').reset();
-        document.getElementById('admin-product-id').value = '';
-        productFormContainer.classList.toggle('hidden');
-      };
-    }
-
-    if (cancelBtn) {
-      cancelBtn.onclick = () => userFormContainer.classList.add('hidden');
-    }
-
-    // Cancel buttons for other modules
-    const cancelHistoryBtn = document.getElementById('admin-history-cancel');
-    if (cancelHistoryBtn) cancelHistoryBtn.onclick = () => historyFormContainer.classList.add('hidden');
-
-    const cancelMapBtn = document.getElementById('admin-map-cancel');
-    if (cancelMapBtn) cancelMapBtn.onclick = () => mapFormContainer.classList.add('hidden');
-
-    const cancelProductBtn = document.getElementById('admin-product-cancel');
-    if (cancelProductBtn) cancelProductBtn.onclick = () => productFormContainer.classList.add('hidden');
-
-    if (userForm) {
-      userForm.onsubmit = (e) => {
-        e.preventDefault();
-        const id = document.getElementById('admin-user-id').value;
-        const userData = {
-          name: document.getElementById('admin-user-name').value,
-          email: document.getElementById('admin-user-email').value,
-          role: document.getElementById('admin-user-role').value
-        };
-        const password = document.getElementById('admin-user-password').value;
-        if (password) userData.password = password;
-
-        const method = id ? 'PUT' : 'POST';
-        const url = id ? `/api/users/${id}` : '/api/users';
-
-        fetch(url, {
-          method,
-          headers: {
-            ...window.VHAuth.authHeaders(),
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(userData)
-        })
+    // --- HISTORY MANAGEMENT ---
+    function loadHistory() {
+      const list = document.getElementById('admin-history-list');
+      if (!list) return;
+      list.innerHTML = '<tr><td colspan="3" class="py-4 text-center">Đang tải...</td></tr>';
+      fetch('/api/history')
         .then(res => res.json())
         .then(data => {
-          if (data.error) alert(data.error);
-          else {
-            userFormContainer.classList.add('hidden');
-            loadUsers();
-          }
+          list.innerHTML = '<tr><td colspan="3" class="py-4 text-center text-gray-500">Chưa có dữ liệu lịch sử.</td></tr>';
         })
-        .catch(err => alert('Lỗi: ' + err.message));
-      };
+        .catch(() => {
+          list.innerHTML = '<tr><td colspan="3" class="py-4 text-center text-red-400">Lỗi tải dữ liệu.</td></tr>';
+        });
     }
 
-    loadUsers();
+    // --- MAP MANAGEMENT ---
+    function loadMapPoints() {
+      const list = document.getElementById('admin-map-list');
+      if (!list) return;
+      list.innerHTML = '<tr><td colspan="4" class="py-4 text-center">Đang tải...</td></tr>';
+      fetch('/api/heritage-sites')
+        .then(res => res.json())
+        .then(sites => {
+          if (!Array.isArray(sites)) throw new Error('Invalid data');
+          list.innerHTML = sites.map(s => `
+            <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+              <td class="py-4 px-2 font-bold">${escapeHtml(s.name)}</td>
+              <td class="py-4 px-2 text-bronze-gold">${escapeHtml(s.type)}</td>
+              <td class="py-4 px-2 text-gray-400 text-xs">${s.latitude}, ${s.longitude}</td>
+              <td class="py-4 px-2 text-right">
+                <button onclick="window._adminEditMap(${s.id})" class="text-bronze-gold hover:text-white transition-colors mr-3">Sửa</button>
+                <button onclick="window._adminDeleteMap(${s.id})" class="text-red-500 hover:text-white transition-colors">Xóa</button>
+              </td>
+            </tr>
+          `).join('');
+        })
+        .catch(err => {
+          console.error('Admin Map Load Error:', err);
+          list.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-red-400">Lỗi tải dữ liệu.</td></tr>';
+        });
+    }
+
+    window._adminEditMap = function(id) {
+      fetch(`/api/heritage-sites/${id}`)
+        .then(res => res.json())
+        .then(s => {
+          document.getElementById('admin-map-id').value = s.id;
+          document.getElementById('admin-map-name').value = s.name;
+          document.getElementById('admin-map-type').value = s.type;
+          document.getElementById('admin-map-region-music').value = s.region_music || '';
+          document.getElementById('admin-map-lat').value = s.latitude;
+          document.getElementById('admin-map-lng').value = s.longitude;
+          document.getElementById('admin-map-desc-vi').value = s.description_vi || '';
+          document.getElementById('admin-map-desc-en').value = s.description_en || '';
+          mapFormContainer.classList.remove('hidden');
+          mapFormContainer.scrollIntoView({ behavior: 'smooth' });
+        });
+    };
+
+    window._adminDeleteMap = function(id) {
+      if (!confirm('Xóa điểm di sản này?')) return;
+      fetch(`/api/heritage-sites/${id}`, {
+        method: 'DELETE',
+        headers: window.VHAuth.authHeaders()
+      })
+      .then(() => loadMapPoints())
+      .catch(err => alert('Lỗi: ' + err.message));
+    };
+
+    // --- COMMUNITY MANAGEMENT ---
+    function loadCommunityPosts() {
+      const list = document.getElementById('admin-community-list');
+      if (!list) return;
+      list.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-gray-500">Chưa có bài đăng nào cần duyệt.</td></tr>';
+    }
+
+    // --- MARKETPLACE MANAGEMENT ---
+    function loadMarketplaceProducts() {
+      const list = document.getElementById('admin-product-list');
+      if (!list) return;
+      list.innerHTML = '<tr><td colspan="4" class="py-4 text-center">Đang tải...</td></tr>';
+      fetch('/api/products')
+        .then(res => res.json())
+        .then(products => {
+          if (!Array.isArray(products)) {
+            list.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-red-400">Dữ liệu không hợp lệ.</td></tr>';
+            return;
+          }
+          list.innerHTML = products.map(p => `
+            <tr class="border-b border-white/5">
+              <td class="py-4 px-2 font-bold">${escapeHtml(p.name)}</td>
+              <td class="py-4 px-2 text-bronze-gold">${new Intl.NumberFormat('vi-VN').format(p.price)} đ</td>
+              <td class="py-4 px-2 text-gray-400">${escapeHtml(p.category)}</td>
+              <td class="py-4 px-2 text-right">
+                <button onclick="window._adminEditProduct(${p.id})" class="text-bronze-gold hover:text-white transition-colors mr-3">Sửa</button>
+                <button onclick="window._adminDeleteProduct(${p.id})" class="text-red-500 hover:text-white transition-colors">Xóa</button>
+              </td>
+            </tr>
+          `).join('');
+        })
+        .catch(() => {
+          list.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-red-400">Lỗi tải dữ liệu.</td></tr>';
+        });
+    }
+
+    window._adminEditProduct = function(id) {
+      fetch(`/api/products/${id}`)
+        .then(res => res.json())
+        .then(p => {
+          document.getElementById('admin-product-id').value = p.id;
+          document.getElementById('admin-product-name').value = p.name;
+          document.getElementById('admin-product-price').value = p.price;
+          document.getElementById('admin-product-category').value = p.category;
+          productFormContainer.classList.remove('hidden');
+          productFormContainer.scrollIntoView({ behavior: 'smooth' });
+        });
+    };
+
+    window._adminDeleteProduct = function(id) {
+      if (!confirm('Xóa sản phẩm này?')) return;
+      fetch(`/api/products/${id}`, {
+        method: 'DELETE',
+        headers: window.VHAuth.authHeaders()
+      })
+      .then(() => loadMarketplaceProducts())
+      .catch(err => alert('Lỗi: ' + err.message));
+    };
+
+    // --- FORM ACTIONS ---
+    if (addUserBtn) addUserBtn.onclick = () => {
+      userForm.reset();
+      document.getElementById('admin-user-id').value = '';
+      userFormContainer.classList.toggle('hidden');
+    };
+    if (cancelBtn) cancelBtn.onclick = () => userFormContainer.classList.add('hidden');
+    if (userForm) userForm.onsubmit = (e) => {
+      e.preventDefault();
+      const id = document.getElementById('admin-user-id').value;
+      const userData = {
+        name: document.getElementById('admin-user-name').value,
+        email: document.getElementById('admin-user-email').value,
+        role: document.getElementById('admin-user-role').value
+      };
+      const password = document.getElementById('admin-user-password').value;
+      if (password) userData.password = password;
+      const method = id ? 'PUT' : 'POST';
+      const url = id ? `/api/users/${id}` : '/api/users';
+      fetch(url, {
+        method,
+        headers: { ...window.VHAuth.authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) alert(data.error);
+        else {
+          userFormContainer.classList.add('hidden');
+          loadUsers();
+        }
+      })
+      .catch(err => alert('Lỗi: ' + err.message));
+    };
+
+    if (addHistoryBtn) addHistoryBtn.onclick = () => {
+      historyForm.reset();
+      document.getElementById('admin-history-id').value = '';
+      historyFormContainer.classList.toggle('hidden');
+    };
+    if (cancelHistoryBtn) cancelHistoryBtn.onclick = () => historyFormContainer.classList.add('hidden');
+
+    if (addMapBtn) addMapBtn.onclick = () => {
+      mapForm.reset();
+      document.getElementById('admin-map-id').value = '';
+      mapFormContainer.classList.toggle('hidden');
+    };
+    if (cancelMapBtn) cancelMapBtn.onclick = () => mapFormContainer.classList.add('hidden');
+    if (mapForm) mapForm.onsubmit = (e) => {
+      e.preventDefault();
+      const id = document.getElementById('admin-map-id').value;
+      const data = {
+        name: document.getElementById('admin-map-name').value,
+        type: document.getElementById('admin-map-type').value,
+        region_music: document.getElementById('admin-map-region-music').value,
+        latitude: document.getElementById('admin-map-lat').value,
+        longitude: document.getElementById('admin-map-lng').value,
+        description_vi: document.getElementById('admin-map-desc-vi').value,
+        description_en: document.getElementById('admin-map-desc-en').value
+      };
+      const method = id ? 'PUT' : 'POST';
+      const url = id ? `/api/heritage-sites/${id}` : '/api/heritage-sites';
+      fetch(url, {
+        method,
+        headers: { ...window.VHAuth.authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) alert(data.error);
+        else {
+          mapFormContainer.classList.add('hidden');
+          loadMapPoints();
+        }
+      })
+      .catch(err => alert('Lỗi: ' + err.message));
+    };
+
+    if (addProductBtn) addProductBtn.onclick = () => {
+      productForm.reset();
+      document.getElementById('admin-product-id').value = '';
+      productFormContainer.classList.toggle('hidden');
+    };
+    if (cancelProductBtn) cancelProductBtn.onclick = () => productFormContainer.classList.add('hidden');
+    if (productForm) productForm.onsubmit = (e) => {
+      e.preventDefault();
+      const id = document.getElementById('admin-product-id').value;
+      const data = {
+        name: document.getElementById('admin-product-name').value,
+        price: document.getElementById('admin-product-price').value,
+        category: document.getElementById('admin-product-category').value
+      };
+      const method = id ? 'PUT' : 'POST';
+      const url = id ? `/api/products/${id}` : '/api/products';
+      fetch(url, {
+        method,
+        headers: { ...window.VHAuth.authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) alert(data.error);
+        else {
+          productFormContainer.classList.add('hidden');
+          loadMarketplaceProducts();
+        }
+      })
+      .catch(err => alert('Lỗi: ' + err.message));
+    };
   }
 
   // Exposed objects

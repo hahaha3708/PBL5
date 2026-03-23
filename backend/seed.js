@@ -27,7 +27,7 @@ async function seed() {
     await connection.query('SET FOREIGN_KEY_CHECKS = 0');
     
     // Drop existing tables to ensure clean state matching the schema
-    const tables = ['users', 'historical_periods', 'heritage_sites', 'products', 'orders', 'posts', 'groups', 'events', 'ai_usage_history', 'comments'];
+    const tables = ['users', 'historical_periods', 'heritage_sites', 'heritage_media', 'products', 'orders', 'posts', 'groups', 'events', 'ai_usage_history', 'comments'];
     for (const table of tables) {
       await connection.query(`DROP TABLE IF EXISTS \`${table}\``);
     }
@@ -63,15 +63,23 @@ async function seed() {
       CREATE TABLE heritage_sites (
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
-        description TEXT,
+        type VARCHAR(255),
         latitude DECIMAL(10, 8) NOT NULL,
         longitude DECIMAL(11, 8) NOT NULL,
-        region VARCHAR(100),
-        type VARCHAR(100),
-        historical_period VARCHAR(255),
-        image_url VARCHAR(500),
-        audio_url VARCHAR(500),
+        region_music VARCHAR(255),
+        description_vi TEXT,
+        description_en TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await connection.query(`
+      CREATE TABLE heritage_media (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        site_id INT,
+        media_type VARCHAR(255),
+        media_url VARCHAR(255),
+        FOREIGN KEY (site_id) REFERENCES heritage_sites(id) ON DELETE CASCADE
       )
     `);
 
@@ -111,13 +119,26 @@ async function seed() {
     const artisanId = userResult.insertId + 2;
 
     await connection.query(
-      'INSERT INTO heritage_sites (name, description, latitude, longitude, region, type, historical_period) VALUES ?',
+      'INSERT INTO heritage_sites (name, type, latitude, longitude, region_music, description_vi, description_en) VALUES ?',
       [[
-        ['Hoàng Thành Thăng Long', 'Di sản văn hóa thế giới tại Hà Nội.', 21.0369, 105.8342, 'North', 'Palace', 'Ly Dynasty'],
-        ['Cố đô Huế', 'Quần thể di tích lịch sử triều Nguyễn.', 16.4637, 107.5909, 'Central', 'Historical Site', 'Nguyen Dynasty'],
-        ['Thánh địa Mỹ Sơn', 'Tổ hợp đền đài Chăm Pa cổ.', 15.7781, 108.1078, 'Central', 'Temple', 'Cham']
+        ['Hoàng Thành Thăng Long', 'Di tích', 21.0369, 105.8342, 'Ca Trù', 'Di sản văn hóa thế giới tại Hà Nội.', 'Imperial Citadel of Thang Long.'],
+        ['Cố đô Huế', 'Di tích', 16.4637, 107.5909, 'Nhã nhạc cung đình', 'Quần thể di tích lịch sử triều Nguyễn.', 'Complex of Hue Monuments.'],
+        ['Thánh địa Mỹ Sơn', 'Di tích', 15.7781, 108.1078, 'Múa Chăm', 'Tổ hợp đền đài Chăm Pa cổ.', 'My Son Sanctuary.']
       ]]
     );
+
+    // Get site IDs for media
+    const [sites] = await connection.query('SELECT id FROM heritage_sites');
+    if (sites.length > 0) {
+      await connection.query(
+        'INSERT INTO heritage_media (site_id, media_type, media_url) VALUES ?',
+        [[
+          [sites[0].id, 'image', 'https://picsum.photos/800/600?random=10'],
+          [sites[1].id, 'image', 'https://picsum.photos/800/600?random=11'],
+          [sites[2].id, 'image', 'https://picsum.photos/800/600?random=12']
+        ]]
+      );
+    }
 
     await connection.query(
       'INSERT INTO products (name, description, price, category, artisan_id, stock_quantity) VALUES ?',

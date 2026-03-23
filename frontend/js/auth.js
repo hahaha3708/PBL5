@@ -84,18 +84,22 @@
     var desktop = document.getElementById('auth-header-desktop');
     var mobileSlot = document.getElementById('auth-header-mobile');
     var u = getUser();
+    
+    // Debug để kiểm tra role khi render
+    if (u) console.log('Current User Role:', u.role);
+
     var btnLoginClass =
       'inline-flex items-center justify-center rounded-full border-2 border-bronze-gold/90 bg-gradient-to-b from-bronze-gold/20 to-bronze-gold/5 px-5 py-2 text-xs font-bold uppercase tracking-[0.12em] text-bronze-gold shadow-[0_0_18px_rgba(197,160,89,0.22)] ring-1 ring-bronze-gold/20 hover:bg-bronze-gold hover:text-ink-black hover:ring-bronze-gold hover:shadow-[0_0_22px_rgba(197,160,89,0.4)] transition-all duration-300';
     var htmlGuest = '<a href="#/auth" class="' + btnLoginClass + '">Đăng nhập</a>';
     var htmlUser =
       '<div class="flex items-center gap-2 flex-wrap justify-end">' +
       '<span class="text-sm text-gray-300 max-w-[140px] truncate" title="' +
-      escapeAttr(u.name) +
+      escapeAttr(u ? u.name : '') +
       '">' +
-      escapeHtml(u.name) +
+      escapeHtml(u ? u.name : '') +
       '</span>' +
       '<span class="text-[10px] uppercase px-2.5 py-1 rounded-full border border-bronze-gold/50 bg-bronze-gold/10 text-bronze-gold">' +
-      roleLabel(u.role) +
+      roleLabel(u ? u.role : 'guest') +
       '</span>' +
       '<button type="button" class="btn-logout rounded-full border border-white/20 px-3 py-1.5 text-xs uppercase tracking-wider text-gray-300 hover:border-bronze-gold/50 hover:text-bronze-gold hover:bg-white/5 transition-all">' +
       'Đăng xuất</button>' +
@@ -111,7 +115,10 @@
 
     var navAdmin = document.getElementById('nav-admin');
     if (navAdmin) {
-      navAdmin.classList.toggle('hidden', !isAdmin());
+      // Quan trọng: Phải kiểm tra lại vai trò từ u thay vì gọi hàm isAdmin() cũ có thể dùng cache
+      var isAdm = u && u.role === 'admin';
+      var isArt = u && u.role === 'artisan';
+      navAdmin.classList.toggle('hidden', !isAdm && !isArt);
     }
 
     var cornerMobile = document.getElementById('auth-corner-mobile');
@@ -128,15 +135,6 @@
           '<a href="#/auth" class="inline-flex items-center justify-center rounded-full border-2 border-bronze-gold/90 bg-gradient-to-b from-bronze-gold/20 to-bronze-gold/5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-bronze-gold shadow-[0_0_14px_rgba(197,160,89,0.2)] ring-1 ring-bronze-gold/15 hover:bg-bronze-gold hover:text-ink-black hover:ring-bronze-gold transition-all duration-300 whitespace-nowrap">Đăng nhập</a>';
       }
     }
-
-    document.querySelectorAll('.btn-logout').forEach(function (b) {
-      b.onclick = function () {
-        clearSession();
-        if (window.location.hash === '#/auth') {
-          window.location.hash = '#/';
-        }
-      };
-    });
   }
 
   function escapeHtml(s) {
@@ -248,7 +246,16 @@
             }
             setSession(res.data.token, res.data.user);
             showMsg('Đăng nhập thành công. Đang chuyển…', false);
-            window.location.hash = '#/';
+            
+            // Đợi một chút để vh-auth-change được xử lý trước khi redirect
+            setTimeout(function() {
+              var role = res.data.user ? res.data.user.role : 'member';
+              if (role === 'admin' || role === 'artisan') {
+                window.location.hash = '#/admin';
+              } else {
+                window.location.hash = '#/';
+              }
+            }, 100);
           })
           .catch(function () {
             showMsg('Lỗi mạng hoặc máy chủ.', true);
@@ -284,6 +291,8 @@
             }
             setSession(res.data.token, res.data.user);
             showMsg('Đăng ký thành công. Vai trò: Thành viên.', false);
+            
+            // Đăng ký mặc định là member nên về home
             window.location.hash = '#/';
           })
           .catch(function () {
@@ -342,6 +351,22 @@
       renderHeader();
       updateRoleBanners();
     });
+
+    document.addEventListener('click', function (e) {
+      if (e.target && e.target.closest('.btn-logout')) {
+        clearSession();
+        
+        // Luôn chuyển về Home khi đăng xuất để làm mới trạng thái (đặc biệt khi đang ở Admin/Auth)
+        var currentHash = window.location.hash;
+        if (currentHash === '#/admin' || currentHash === '#/auth') {
+          window.location.hash = '#/';
+        } else {
+          // Nếu đang ở các trang công khai (Home, Map, Marketplace), chỉ cần làm mới trang để áp dụng quyền "Khách"
+          window.location.reload();
+        }
+      }
+    });
+
     refreshMe();
   });
 })();
