@@ -49,13 +49,18 @@ async function seed() {
     await connection.query(`
       CREATE TABLE historical_periods (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        dynasty VARCHAR(255) NOT NULL,
+        name VARCHAR(255) NOT NULL,
         start_year INT NOT NULL,
         end_year INT NOT NULL,
-        description TEXT,
+        capital VARCHAR(255),
+        notable_figures TEXT,
         key_events TEXT,
+        description TEXT,
         image_url VARCHAR(500),
-        audio_url VARCHAR(500),
+        theme_color VARCHAR(255),
+        background_pattern VARCHAR(255),
+        background_music VARCHAR(255),
+        influence INT DEFAULT 50,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -151,6 +156,17 @@ async function seed() {
       ]]
     );
     const artisanId = userResult.insertId + 2;
+
+    await connection.query(
+      'INSERT INTO historical_periods (name, start_year, end_year, capital, notable_figures, key_events, description, image_url, theme_color, background_pattern, background_music, influence) VALUES ?',
+      [[
+        ['Hùng Vương', -2879, -258, 'Phong Châu', '18 đời vua Hùng', 'Dựng nước Văn Lang', 'Thời kỳ bình minh của lịch sử Việt Nam.', 'https://picsum.photos/1200/600?random=20', '#c5a059', 'pattern-lac-viet', 'music-trong-dong', 40],
+        ['Nhà Lý', 1009, 1225, 'Thăng Long', 'Lý Thái Tổ, Lý Thường Kiệt', 'Dời đô về Thăng Long, Phá Tống bình Chiêm', 'Triều đại đặt nền móng văn hóa rực rỡ.', 'https://picsum.photos/1200/600?random=21', '#8b0000', 'pattern-dragon-ly', 'music-nha-nhac', 85],
+        ['Nhà Trần', 1225, 1400, 'Thăng Long', 'Trần Hưng Đạo, Trần Nhân Tông', 'Ba lần kháng chiến chống Nguyên Mông', 'Thời kỳ hào khí Đông A lẫy lừng.', 'https://picsum.photos/1200/600?random=22', '#daa520', 'pattern-cloud-tran', 'music-quan-ho', 95],
+        ['Nhà Lê', 1428, 1789, 'Đông Kinh', 'Lê Lợi, Nguyễn Trãi', 'Khởi nghĩa Lam Sơn, Luật Hồng Đức', 'Thời kỳ hưng thịnh nhất của phong kiến Việt Nam.', 'https://picsum.photos/1200/600?random=23', '#006400', 'pattern-phoenix-le', 'music-ca-tru', 90],
+        ['Nhà Nguyễn', 1802, 1945, 'Huế', 'Gia Long, Minh Mạng', 'Thống nhất đất nước, Xây dựng Kinh đô Huế', 'Triều đại phong kiến cuối cùng.', 'https://picsum.photos/1200/600?random=24', '#ff8c00', 'pattern-lotus-nguyen', 'music-cung-dinh', 75]
+      ]]
+    );
 
     await connection.query(
       'INSERT INTO heritage_sites (name, type, latitude, longitude, region_music, description_vi, description_en, image_url) VALUES ?',

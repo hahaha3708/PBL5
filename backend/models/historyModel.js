@@ -1,53 +1,38 @@
-// History Model - Handles historical timeline data
-const db = require('../config/database');
+const pool = require('../config/database');
 
-class History {
+class HistoricalPeriod {
   static async findAll() {
-    const query = 'SELECT * FROM historical_periods ORDER BY start_year';
-    const [rows] = await db.execute(query);
+    const [rows] = await pool.query('SELECT * FROM historical_periods ORDER BY start_year ASC');
     return rows;
   }
 
   static async findById(id) {
-    const query = 'SELECT * FROM historical_periods WHERE id = ?';
-    const [rows] = await db.execute(query, [id]);
+    const [rows] = await pool.query('SELECT * FROM historical_periods WHERE id = ?', [id]);
     return rows[0];
   }
 
-  static async findByDynasty(dynasty) {
-    const query = 'SELECT * FROM historical_periods WHERE dynasty = ?';
-    const [rows] = await db.execute(query, [dynasty]);
-    return rows;
+  static async create(data) {
+    const { name, start_year, end_year, capital, notable_figures, key_events, description, image_url, theme_color, background_pattern, background_music, influence } = data;
+    const [result] = await pool.query(
+      'INSERT INTO historical_periods (name, start_year, end_year, capital, notable_figures, key_events, description, image_url, theme_color, background_pattern, background_music, influence) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, start_year, end_year, capital, notable_figures, key_events, description, image_url, theme_color, background_pattern, background_music, influence]
+    );
+    return { id: result.insertId, ...data };
   }
 
-  static async findByYearRange(startYear, endYear) {
-    const query = 'SELECT * FROM historical_periods WHERE start_year >= ? AND end_year <= ? ORDER BY start_year';
-    const [rows] = await db.execute(query, [startYear, endYear]);
-    return rows;
-  }
-
-  static async create(periodData) {
-    const { dynasty, start_year, end_year, description, key_events, image_url, audio_url } = periodData;
-    const query = 'INSERT INTO historical_periods (dynasty, start_year, end_year, description, key_events, image_url, audio_url) VALUES (?, ?, ?, ?, ?, ?, ?)';
-    const [result] = await db.execute(query, [dynasty, start_year, end_year, description, key_events, image_url, audio_url]);
-    return { id: result.insertId, ...periodData };
-  }
-
-  static async update(id, periodData) {
-    const { dynasty, start_year, end_year, description, key_events, image_url, audio_url } = periodData;
-    const query = 'UPDATE historical_periods SET dynasty = ?, start_year = ?, end_year = ?, description = ?, key_events = ?, image_url = ?, audio_url = ? WHERE id = ?';
-    const [result] = await db.execute(query, [dynasty, start_year, end_year, description, key_events, image_url, audio_url, id]);
-    if (result.affectedRows > 0) {
-      return { id, ...periodData };
-    }
-    return null;
+  static async update(id, data) {
+    const { name, start_year, end_year, capital, notable_figures, key_events, description, image_url, theme_color, background_pattern, background_music, influence } = data;
+    const [result] = await pool.query(
+      'UPDATE historical_periods SET name = ?, start_year = ?, end_year = ?, capital = ?, notable_figures = ?, key_events = ?, description = ?, image_url = ?, theme_color = ?, background_pattern = ?, background_music = ?, influence = ? WHERE id = ?',
+      [name, start_year, end_year, capital, notable_figures, key_events, description, image_url, theme_color, background_pattern, background_music, influence, id]
+    );
+    return result.affectedRows > 0;
   }
 
   static async delete(id) {
-    const query = 'DELETE FROM historical_periods WHERE id = ?';
-    const [result] = await db.execute(query, [id]);
+    const [result] = await pool.query('DELETE FROM historical_periods WHERE id = ?', [id]);
     return result.affectedRows > 0;
   }
 }
 
-module.exports = History;
+module.exports = HistoricalPeriod;

@@ -6,24 +6,6 @@
 
   const ROUTES = ['/', '/history', '/map', '/ai', '/community', '/marketplace', '/auth', '/admin', '/product', '/cart', '/checkout'];
 
-  const dynasticChartData = [
-    { name: 'Ngo', start: 938, power: 40 },
-    { name: 'Dinh', start: 968, power: 50 },
-    { name: 'Early Le', start: 980, power: 60 },
-    { name: 'Ly', start: 1009, power: 85 },
-    { name: 'Tran', start: 1225, power: 95 },
-    { name: 'Ho', start: 1400, power: 50 },
-    { name: 'Later Le', start: 1428, power: 90 },
-    { name: 'Nguyen', start: 1802, power: 70 }
-  ];
-
-  const dynasties = [
-    { id: 'ly', name: 'Ly Dynasty', period: '1009–1225', desc: 'The Golden Era of Buddhism and Art.', color: 'border-yellow-500' },
-    { id: 'tran', name: 'Tran Dynasty', period: '1225–1400', desc: 'Defenders against the Mongol Empire.', color: 'border-red-600' },
-    { id: 'le', name: 'Le Dynasty', period: '1428–1789', desc: 'Renaissance of Literature and Law.', color: 'border-blue-500' },
-    { id: 'nguyen', name: 'Nguyen Dynasty', period: '1802–1945', desc: 'Unification and Imperial Grandeur.', color: 'border-purple-500' }
-  ];
-
   let chartInstance = null;
   let activeDynastyIndex = 0;
 
@@ -200,32 +182,83 @@
   }
 
   function updateDynastyUI() {
-    const d = dynasties[activeDynastyIndex];
+    const d = window._dynasties && window._dynasties[activeDynastyIndex];
+    if (!d) return;
     const titleEl = document.getElementById('dynasty-title');
     const periodEl = document.getElementById('dynasty-period');
     const descEl = document.getElementById('dynasty-desc');
-    if (titleEl) titleEl.textContent = d.name;
-    if (periodEl) periodEl.textContent = d.period;
-    if (descEl) descEl.textContent = d.desc;
+    const capitalEl = document.getElementById('dynasty-capital');
+    const figuresEl = document.getElementById('dynasty-figures');
+    const eventsEl = document.getElementById('dynasty-events');
+    const bgImgEl = document.getElementById('dynasty-bg-image');
 
-    const borderOn = ['border-yellow-500', 'border-red-600', 'border-blue-500', 'border-purple-500'];
+    if (titleEl) titleEl.textContent = d.name;
+    if (periodEl) periodEl.textContent = `${d.start_year}–${d.end_year}`;
+    if (descEl) descEl.textContent = d.description;
+    if (capitalEl) capitalEl.textContent = `Kinh đô: ${d.capital || '---'}`;
+    
+    if (bgImgEl) {
+      bgImgEl.style.backgroundImage = d.image_url ? `url('${d.image_url}')` : 'none';
+      bgImgEl.style.backgroundSize = 'cover';
+      bgImgEl.style.backgroundPosition = 'center';
+    }
+
+    if (figuresEl) {
+      const figures = (d.notable_figures || '').split(',').map(s => s.trim()).filter(s => s);
+      figuresEl.innerHTML = figures.length > 0 
+        ? figures.map(f => `<span class="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300">${escapeHtml(f)}</span>`).join('')
+        : '<span class="text-gray-600 italic text-sm">Chưa có thông tin</span>';
+    }
+
+    if (eventsEl) {
+      const events = (d.key_events || '').split(',').map(s => s.trim()).filter(s => s);
+      eventsEl.innerHTML = events.length > 0
+        ? events.map(e => `<div class="flex items-start gap-3 text-sm text-gray-400"><span class="text-bronze-gold">•</span><span>${escapeHtml(e)}</span></div>`).join('')
+        : '<div class="text-gray-600 italic text-sm">Chưa có thông tin</div>';
+    }
+
     document.querySelectorAll('[data-dynasty-index]').forEach(function (btn) {
       const i = parseInt(btn.getAttribute('data-dynasty-index'), 10);
       const isOn = i === activeDynastyIndex;
       btn.className =
         'w-full text-left p-4 border-l-2 transition-all duration-300 group hover:bg-white/5 ' +
-        (isOn ? borderOn[i] + ' bg-white/5 text-white' : 'border-white/10 text-gray-500');
+        (isOn ? 'border-bronze-gold bg-white/5 text-white' : 'border-white/10 text-gray-500');
     });
   }
 
   function initDynastyButtons() {
-    document.querySelectorAll('[data-dynasty-index]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        activeDynastyIndex = parseInt(btn.getAttribute('data-dynasty-index'), 10);
-        updateDynastyUI();
+    const container = document.getElementById('dynasty-nav');
+    if (!container) return;
+
+    fetch('/api/history')
+      .then(res => res.json())
+      .then(data => {
+        window._dynasties = data;
+        if (data.length > 0) {
+          container.innerHTML = data.map((d, i) => `
+            <button type="button" data-dynasty-index="${i}" class="w-full text-left p-4 border-l-2 border-white/10 text-gray-500 transition-all duration-300 group hover:bg-white/5">
+              <div class="text-[10px] uppercase tracking-widest opacity-50 mb-1">${d.start_year} - ${d.end_year}</div>
+              <div class="font-display text-lg group-hover:text-bronze-gold transition-colors">${d.name}</div>
+            </button>
+          `).join('');
+
+          document.querySelectorAll('[data-dynasty-index]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              activeDynastyIndex = parseInt(btn.getAttribute('data-dynasty-index'), 10);
+              updateDynastyUI();
+            });
+          });
+          
+          updateDynastyUI();
+          initHistoryChart(); // Khởi tạo chart sau khi có dữ liệu
+        } else {
+          container.innerHTML = '<p class="text-gray-600 italic text-sm p-4">Chưa có dữ liệu triều đại.</p>';
+        }
+      })
+      .catch(err => {
+        console.error('History Fetch Error:', err);
+        container.innerHTML = '<p class="text-red-400 text-sm p-4">Lỗi kết nối dữ liệu.</p>';
       });
-    });
-    updateDynastyUI();
   }
 
   function initHistoryChart() {
@@ -237,25 +270,29 @@
       chartInstance = null;
     }
 
+    const data = window._dynasties || [];
+    if (data.length === 0) return;
+
     const ctx = canvas.getContext('2d');
     chartInstance = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: dynasticChartData.map(function (d) {
-          return String(d.start);
+        labels: data.map(function (d) {
+          return d.name;
         }),
         datasets: [
           {
-            label: 'Influence',
-            data: dynasticChartData.map(function (d) {
-              return d.power;
+            label: 'Tầm ảnh hưởng',
+            data: data.map(function (d) {
+              return d.influence || 50;
             }),
             borderColor: '#C5A059',
             backgroundColor: 'rgba(197, 160, 89, 0.25)',
             fill: true,
             tension: 0.35,
-            pointRadius: 3,
-            pointBackgroundColor: '#C5A059'
+            pointRadius: 4,
+            pointBackgroundColor: '#C5A059',
+            pointHoverRadius: 6
           }
         ]
       },
@@ -267,16 +304,24 @@
           tooltip: {
             backgroundColor: '#0F172A',
             borderColor: '#C5A059',
-            borderWidth: 1
+            borderWidth: 1,
+            callbacks: {
+              label: function(context) {
+                const d = data[context.dataIndex];
+                return `Tầm ảnh hưởng: ${context.raw}% (${d.start_year} - ${d.end_year})`;
+              }
+            }
           }
         },
         scales: {
           x: {
-            ticks: { color: '#888' },
+            ticks: { color: '#888', font: { size: 10 } },
             grid: { color: 'rgba(255,255,255,0.06)' }
           },
           y: {
-            ticks: { color: '#888' },
+            min: 0,
+            max: 100,
+            ticks: { color: '#888', stepSize: 20 },
             grid: { color: 'rgba(255,255,255,0.06)' }
           }
         }
@@ -898,12 +943,54 @@
       fetch('/api/history')
         .then(res => res.json())
         .then(data => {
-          list.innerHTML = '<tr><td colspan="3" class="py-4 text-center text-gray-500">Chưa có dữ liệu lịch sử.</td></tr>';
+          if (!Array.isArray(data)) throw new Error('Invalid data');
+          list.innerHTML = data.map(h => `
+            <tr class="border-b border-white/5 hover:bg-white/5 transition-colors">
+              <td class="py-4 px-2 font-bold">${escapeHtml(h.name)}</td>
+              <td class="py-4 px-2 text-gray-400">${h.start_year} - ${h.end_year}</td>
+              <td class="py-4 px-2 text-right">
+                <button onclick="window._adminEditHistory(${h.id})" class="text-bronze-gold hover:text-white transition-colors mr-3">Sửa</button>
+                <button onclick="window._adminDeleteHistory(${h.id})" class="text-red-500 hover:text-white transition-colors">Xóa</button>
+              </td>
+            </tr>
+          `).join('');
         })
         .catch(() => {
           list.innerHTML = '<tr><td colspan="3" class="py-4 text-center text-red-400">Lỗi tải dữ liệu.</td></tr>';
         });
     }
+
+    window._adminEditHistory = function(id) {
+      fetch(`/api/history/${id}`)
+        .then(res => res.json())
+        .then(h => {
+          document.getElementById('admin-history-id').value = h.id;
+          document.getElementById('admin-history-name').value = h.name;
+          document.getElementById('admin-history-capital').value = h.capital || '';
+          document.getElementById('admin-history-figures').value = h.notable_figures || '';
+          document.getElementById('admin-history-events').value = h.key_events || '';
+          document.getElementById('admin-history-image').value = h.image_url || '';
+          document.getElementById('admin-history-color').value = h.theme_color || '';
+          document.getElementById('admin-history-start').value = h.start_year;
+          document.getElementById('admin-history-end').value = h.end_year;
+          document.getElementById('admin-history-pattern').value = h.background_pattern || '';
+          document.getElementById('admin-history-music').value = h.background_music || '';
+          document.getElementById('admin-history-influence').value = h.influence || 50;
+          document.getElementById('admin-history-desc').value = h.description || '';
+          historyFormContainer.classList.remove('hidden');
+          historyFormContainer.scrollIntoView({ behavior: 'smooth' });
+        });
+    };
+
+    window._adminDeleteHistory = function(id) {
+      if (!confirm('Xóa triều đại này?')) return;
+      fetch(`/api/history/${id}`, {
+        method: 'DELETE',
+        headers: window.VHAuth.authHeaders()
+      })
+      .then(() => loadHistory())
+      .catch(err => alert('Lỗi: ' + err.message));
+    };
 
     // --- MAP MANAGEMENT ---
     function loadMapPoints() {
@@ -1062,6 +1149,40 @@
       historyFormContainer.classList.toggle('hidden');
     };
     if (cancelHistoryBtn) cancelHistoryBtn.onclick = () => historyFormContainer.classList.add('hidden');
+    if (historyForm) historyForm.onsubmit = (e) => {
+      e.preventDefault();
+      const id = document.getElementById('admin-history-id').value;
+      const data = {
+        name: document.getElementById('admin-history-name').value,
+        capital: document.getElementById('admin-history-capital').value,
+        notable_figures: document.getElementById('admin-history-figures').value,
+        key_events: document.getElementById('admin-history-events').value,
+        image_url: document.getElementById('admin-history-image').value,
+        theme_color: document.getElementById('admin-history-color').value,
+        start_year: document.getElementById('admin-history-start').value,
+        end_year: document.getElementById('admin-history-end').value,
+        background_pattern: document.getElementById('admin-history-pattern').value,
+        background_music: document.getElementById('admin-history-music').value,
+        influence: document.getElementById('admin-history-influence').value,
+        description: document.getElementById('admin-history-desc').value
+      };
+      const method = id ? 'PUT' : 'POST';
+      const url = id ? `/api/history/${id}` : '/api/history';
+      fetch(url, {
+        method,
+        headers: { ...window.VHAuth.authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) alert(data.error);
+        else {
+          historyFormContainer.classList.add('hidden');
+          loadHistory();
+        }
+      })
+      .catch(err => alert('Lỗi: ' + err.message));
+    };
 
     if (addMapBtn) addMapBtn.onclick = () => {
       mapForm.reset();

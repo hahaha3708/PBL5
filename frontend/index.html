@@ -195,9 +195,13 @@
               <div id="admin-history-form-container" class="hidden mb-8 p-6 bg-white/5 rounded-lg border border-white/10">
                 <form id="admin-history-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input type="hidden" id="admin-history-id" />
-                  <div class="md:col-span-2">
+                  <div>
                     <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Tên triều đại</label>
-                    <input id="admin-history-dynasty" type="text" required class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                    <input id="admin-history-name" type="text" required class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Kinh đô</label>
+                    <input id="admin-history-capital" type="text" class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
                   </div>
                   <div>
                     <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Năm bắt đầu</label>
@@ -208,7 +212,35 @@
                     <input id="admin-history-end" type="number" required class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
                   </div>
                   <div class="md:col-span-2">
-                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Mô tả</label>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Nhân vật tiêu biểu</label>
+                    <input id="admin-history-figures" type="text" placeholder="Ngăn cách bởi dấu phẩy" class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Sự kiện chính</label>
+                    <input id="admin-history-events" type="text" placeholder="Ngăn cách bởi dấu phẩy" class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">URL Hình ảnh</label>
+                    <input id="admin-history-image" type="url" placeholder="https://..." class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Màu chủ đạo (Hex)</label>
+                    <input id="admin-history-color" type="text" placeholder="#c5a059" class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Họa tiết nền</label>
+                    <input id="admin-history-pattern" type="text" class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Nhạc nền (URL/ID)</label>
+                    <input id="admin-history-music" type="text" class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Tầm ảnh hưởng (0-100)</label>
+                    <input id="admin-history-influence" type="number" min="0" max="100" class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none" />
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Mô tả ngắn</label>
                     <textarea id="admin-history-desc" rows="3" class="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white focus:border-red-500 focus:outline-none"></textarea>
                   </div>
                   <div class="md:col-span-2 flex gap-3">
@@ -380,8 +412,6 @@
           <p class="text-center text-bronze-gold uppercase tracking-[0.35em] text-xs mb-2">Tài khoản</p>
           <h1 class="font-display text-3xl text-center text-white mb-6">Đăng nhập &amp; Đăng ký</h1>
           <div class="flex p-1 rounded-full bg-black/45 border border-white/10 gap-1 mb-6 shadow-inner">
-            <button type="button" id="auth-tab-login" class="flex-1 rounded-full py-2.5 text-sm uppercase tracking-widest transition-all duration-300 border border-bronze-gold/50 bg-bronze-gold/15 text-bronze-gold shadow-[0_0_14px_rgba(197,160,89,0.12)]">Đăng nhập</button>
-            <button type="button" id="auth-tab-register" class="flex-1 rounded-full py-2.5 text-sm uppercase tracking-widest transition-all duration-300 border border-transparent text-gray-500 hover:text-gray-300 hover:bg-white/5">Đăng ký</button>
           </div>
           <form id="form-login" class="space-y-4">
             <div>
@@ -547,44 +577,50 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div class="lg:col-span-3 glass-panel p-6 rounded-lg sticky top-24 h-fit">
             <h3 class="text-bronze-gold font-bold uppercase tracking-widest mb-6 flex items-center gap-2">📜 Eras</h3>
-            <ul class="space-y-4">
-              <li><button type="button" data-dynasty-index="0" class="w-full text-left p-4 border-l-2 border-yellow-500 bg-white/5">Ly Dynasty<div class="text-xs text-gray-400 font-mono mt-1">1009–1225</div></button></li>
-              <li><button type="button" data-dynasty-index="1" class="w-full text-left p-4 border-l-2 border-white/10 text-gray-500 hover:bg-white/5">Tran Dynasty<div class="text-xs text-gray-400 font-mono mt-1">1225–1400</div></button></li>
-              <li><button type="button" data-dynasty-index="2" class="w-full text-left p-4 border-l-2 border-white/10 text-gray-500 hover:bg-white/5">Le Dynasty<div class="text-xs text-gray-400 font-mono mt-1">1428–1789</div></button></li>
-              <li><button type="button" data-dynasty-index="3" class="w-full text-left p-4 border-l-2 border-white/10 text-gray-500 hover:bg-white/5">Nguyen Dynasty<div class="text-xs text-gray-400 font-mono mt-1">1802–1945</div></button></li>
-            </ul>
+            <nav id="dynasty-nav" class="space-y-4">
+              <!-- Dynamically loaded from database -->
+              <div class="animate-pulse space-y-4">
+                <div class="h-16 bg-white/5 rounded"></div>
+                <div class="h-16 bg-white/5 rounded"></div>
+                <div class="h-16 bg-white/5 rounded"></div>
+              </div>
+            </nav>
           </div>
           <div class="lg:col-span-9 space-y-8">
-            <div class="glass-panel p-6 rounded-lg border border-bronze-gold/20">
-              <div class="flex justify-between items-end mb-4 flex-wrap gap-2">
-                <h2 id="dynasty-title" class="font-display text-3xl">Ly Dynasty</h2>
-                <span id="dynasty-period" class="text-bronze-gold font-mono text-xl">1009–1225</span>
-              </div>
-              <p id="dynasty-desc" class="text-gray-300 text-lg mb-8 font-serif leading-relaxed border-b border-white/10 pb-6">The Golden Era of Buddhism and Art.</p>
-              <div class="h-64 w-full">
-                <h4 class="text-xs uppercase text-gray-500 mb-2">Dynastic Influence Visualization</h4>
-                <canvas id="dynastyChart" height="200"></canvas>
-              </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div class="glass-panel p-6 rounded-lg group cursor-pointer overflow-hidden relative">
-                <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10"></div>
-                <img src="https://picsum.photos/400/300?random=1" class="w-full h-48 object-cover rounded opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 mb-4" alt="Artifact" />
-                <div class="relative z-20">
-                  <h4 class="font-display text-xl mb-1">Imperial Ceramics</h4>
-                  <p class="text-sm text-gray-400">Blue and white porcelain patterns distinctive to this era.</p>
+            <div id="dynasty-content-main" class="glass-panel p-8 rounded-lg border border-bronze-gold/20 relative overflow-hidden">
+              <div id="dynasty-bg-image" class="absolute inset-0 z-0 opacity-10 grayscale pointer-events-none"></div>
+              <div class="relative z-10">
+                <div class="flex justify-between items-end mb-6 flex-wrap gap-4">
+                  <div>
+                    <div id="dynasty-capital" class="text-xs text-bronze-gold uppercase tracking-[0.3em] mb-1">Kinh đô: ---</div>
+                    <h2 id="dynasty-title" class="font-display text-5xl">---</h2>
+                  </div>
+                  <span id="dynasty-period" class="text-bronze-gold font-mono text-2xl bg-bronze-gold/5 px-4 py-1 rounded-full border border-bronze-gold/20">---</span>
+                </div>
+                
+                <p id="dynasty-desc" class="text-gray-300 text-xl mb-10 font-serif leading-relaxed italic">---</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                  <div class="space-y-4">
+                    <h4 class="text-xs uppercase tracking-widest text-bronze-gold/60 font-bold">Nhân vật tiêu biểu</h4>
+                    <div id="dynasty-figures" class="flex flex-wrap gap-2">
+                      <!-- Loaded via JS -->
+                    </div>
+                  </div>
+                  <div class="space-y-4">
+                    <h4 class="text-xs uppercase tracking-widest text-bronze-gold/60 font-bold">Sự kiện tiêu biểu</h4>
+                    <div id="dynasty-events" class="space-y-2">
+                      <!-- Loaded via JS -->
+                    </div>
+                  </div>
+                </div>
+
+                <div class="h-64 w-full border-t border-white/5 pt-8">
+                  <h4 class="text-[10px] uppercase tracking-[0.4em] text-gray-500 mb-4 text-center">Biểu đồ tầm ảnh hưởng</h4>
+                  <canvas id="dynastyChart" height="180"></canvas>
                 </div>
               </div>
-              <div class="glass-panel p-6 rounded-lg group cursor-pointer overflow-hidden relative">
-                <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10"></div>
-                <img src="https://picsum.photos/400/300?random=2" class="w-full h-48 object-cover rounded opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 mb-4" alt="Architecture" />
-                <div class="relative z-20">
-                  <h4 class="font-display text-xl mb-1">Pagoda Architecture</h4>
-                  <p class="text-sm text-gray-400">Curved roofs and intricate wood carving techniques.</p>
-                </div>
-              </div>
             </div>
-            <button type="button" class="w-full py-6 border border-white/20 hover:border-bronze-gold hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-gray-300 hover:text-white uppercase tracking-widest">Explore Full Archives →</button>
           </div>
         </div>
       </div>
